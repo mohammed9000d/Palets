@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "baseUrl": "resources/js",
+    "paths": {
+      "*": ["*"],
+      "components/*": ["components/*"],
+      "contexts/*": ["contexts/*"],
+      "hooks/*": ["hooks/*"],
+      "layout/*": ["layout/*"],
+      "menu-items/*": ["menu-items/*"],
+      "routes/*": ["routes/*"],
+      "services/*": ["services/*"],
+      "store/*": ["store/*"],
+      "themes/*": ["themes/*"],
+      "ui-component/*": ["ui-component/*"],
+      "utils/*": ["utils/*"],
+      "views/*": ["views/*"],
+      "assets/*": ["assets/*"]
+    }
+  },
+  "include": [
+    "resources/js/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "public",
+    "storage"
+  ]
+}

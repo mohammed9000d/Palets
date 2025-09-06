@@ -1,0 +1,627 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  FormControlLabel,
+  Switch,
+  Alert,
+  CircularProgress,
+  Avatar,
+  IconButton
+} from '@mui/material';
+import { IconTrash } from '@tabler/icons-react';
+import { artistsAPI } from '../../services/api';
+import MainCard from '../../ui-component/cards/MainCard';
+
+const ArtistsForm = () => {
+  const navigate = useNavigate();
+  const { slug } = useParams();
+  const isEdit = Boolean(slug);
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  const [formData, setFormData] = useState({
+    artist_name: '',
+    bio: '',
+    link: '',
+    is_active: true,
+    social_links: {
+      instagram: '',
+      twitter: '',
+      facebook: '',
+      linkedin: '',
+      youtube: '',
+      website: ''
+    },
+    contact_email: '',
+    phone: '',
+    specialties: '',
+    commission_rate: ''
+  });
+
+  const [files, setFiles] = useState({
+    avatar: null,
+    gallery_images: []
+  });
+
+  const [previews, setPreviews] = useState({
+    avatar: null,
+    gallery_images: []
+  });
+
+  const [existingImages, setExistingImages] = useState({
+    avatar: null,
+    gallery: []
+  });
+
+  // Load artist data if editing
+  useEffect(() => {
+    if (isEdit && slug) {
+      loadArtist();
+    }
+  }, [isEdit, slug]);
+
+  const loadArtist = async () => {
+    setLoading(true);
+    try {
+      const response = await artistsAPI.getBySlug(slug);
+      const artist = response.data.artist;
+      
+      setFormData({
+        artist_name: artist.artist_name || '',
+        bio: artist.bio || '',
+        link: artist.link || '',
+        is_active: artist.is_active,
+        social_links: {
+          instagram: artist.social_links?.instagram || '',
+          twitter: artist.social_links?.twitter || '',
+          facebook: artist.social_links?.facebook || '',
+          linkedin: artist.social_links?.linkedin || '',
+          youtube: artist.social_links?.youtube || '',
+          website: artist.social_links?.website || ''
+        },
+        contact_email: artist.contact_email || '',
+        phone: artist.phone || '',
+        specialties: artist.specialties || '',
+        commission_rate: artist.commission_rate || ''
+      });
+
+      // Set existing images
+      if (artist.avatar_url) {
+        setExistingImages(prev => ({ ...prev, avatar: artist.avatar_url }));
+      }
+      if (artist.gallery_images && artist.gallery_images.length > 0) {
+        setExistingImages(prev => ({ 
+          ...prev, 
+          gallery: artist.gallery_images.map(img => ({
+            id: img.id,
+            url: img.url,
+            thumb: img.thumb
+          }))
+        }));
+      }
+    } catch (err) {
+      setError('Failed to load artist data');
+      console.error('Error loading artist:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, checked } = e.target;
+    if (name.startsWith('social_')) {
+      const socialKey = name.replace('social_', '');
+      setFormData(prev => ({
+        ...prev,
+        social_links: {
+          ...prev.social_links,
+          [socialKey]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'is_active' ? checked : value
+      }));
+    }
+  };
+
+  const handleSwitchChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      is_active: e.target.checked
+    }));
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFiles(prev => ({ ...prev, avatar: file }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviews(prev => ({ ...prev, avatar: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleGalleryChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setFiles(prev => ({ ...prev, gallery_images: [...prev.gallery_images, ...selectedFiles] }));
+    
+    selectedFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviews(prev => ({
+          ...prev,
+          gallery_images: [...prev.gallery_images, reader.result]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeAvatar = () => {
+    setFiles(prev => ({ ...prev, avatar: null }));
+    setPreviews(prev => ({ ...prev, avatar: null }));
+    if (isEdit) {
+      setExistingImages(prev => ({ ...prev, avatar: null }));
+    }
+  };
+
+  const removeGalleryImage = (index) => {
+    setFiles(prev => ({
+      ...prev,
+      gallery_images: prev.gallery_images.filter((_, i) => i !== index)
+    }));
+    setPreviews(prev => ({
+      ...prev,
+      gallery_images: prev.gallery_images.filter((_, i) => i !== index)
+    }));
+  };
+
+  const removeExistingGalleryImage = (index) => {
+    setExistingImages(prev => ({
+      ...prev,
+      gallery: prev.gallery.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Clean up social_links - remove empty values and ensure it's a proper object
+      const cleanSocialLinks = {};
+      Object.keys(formData.social_links).forEach(key => {
+        if (formData.social_links[key] && formData.social_links[key].trim() !== '') {
+          cleanSocialLinks[key] = formData.social_links[key].trim();
+        }
+      });
+
+      const submitData = {
+        ...formData,
+        social_links: cleanSocialLinks,
+        ...files
+      };
+
+      // Handle removed existing images
+      if (isEdit) {
+        if (!existingImages.avatar) {
+          submitData.remove_avatar = true;
+        }
+      }
+
+      if (isEdit) {
+        await artistsAPI.update(slug, submitData);
+        setSuccess('Artist updated successfully!');
+      } else {
+        await artistsAPI.create(submitData);
+        setSuccess('Artist created successfully!');
+      }
+      
+      // Redirect after success
+      setTimeout(() => {
+        navigate('/admin/artists');
+      }, 2000);
+
+    } catch (err) {
+      if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        const errorMessages = Object.values(errors).flat().join(', ');
+        setError(errorMessages);
+      } else {
+        setError('Failed to save artist. Please try again.');
+      }
+      console.error('Error saving artist:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/admin/artists');
+  };
+
+  if (loading) {
+    return (
+      <Paper sx={{ p: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress />
+        </Box>
+      </Paper>
+    );
+  }
+
+  return (
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+      {/* Simple Header */}
+      <Box mb={3}>
+        <Box display="flex" alignItems="center" gap={2} mb={2}>
+          <IconButton onClick={() => navigate('/admin/artists')} size="small">
+            <IconArrowLeft />
+          </IconButton>
+          <Typography variant="h4" fontWeight={600}>
+            {isEdit ? 'Edit Artist' : 'Create New Artist'}
+          </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          {isEdit ? 'Update artist information and media' : 'Add a new artist to your gallery'}
+        </Typography>
+      </Box>
+
+      {/* Alerts */}
+      {error && (
+        <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" icon={<IconCheck />} sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
+          {/* Left Column - Form Fields */}
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ p: 3 }}>
+              {/* Basic Information */}
+              <Typography variant="h6" gutterBottom>
+                Basic Information
+              </Typography>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Artist Name"
+                    name="artist_name"
+                    value={formData.artist_name}
+                    onChange={handleInputChange}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <IconUser size={20} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Biography"
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    multiline
+                    rows={4}
+                    placeholder="Tell us about the artist..."
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Portfolio/Website URL"
+                    name="link"
+                    value={formData.link}
+                    onChange={handleInputChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <IconWorld size={20} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    placeholder="https://artist-portfolio.com"
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.is_active}
+                        onChange={handleSwitchChange}
+                        color="primary"
+                      />
+                    }
+                    label="Active Artist"
+                  />
+                </Grid>
+              </Grid>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Contact Information */}
+              <Typography variant="h6" gutterBottom>
+                Contact Information
+              </Typography>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Contact Email"
+                    name="contact_email"
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={handleInputChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <IconMail size={20} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Phone Number"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <IconPhone size={20} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+              </Grid>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Professional Details */}
+              <Typography variant="h6" gutterBottom>
+                Professional Details
+              </Typography>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={8}>
+                  <TextField
+                    fullWidth
+                    label="Art Specialties"
+                    name="specialties"
+                    value={formData.specialties}
+                    onChange={handleInputChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <IconPalette size={20} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    placeholder="Oil painting, Watercolor, Digital art..."
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Commission Rate (%)"
+                    name="commission_rate"
+                    type="number"
+                    value={formData.commission_rate}
+                    onChange={handleInputChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <IconCurrencyDollar size={20} />
+                        </InputAdornment>
+                      ),
+                      inputProps: { min: 0, max: 99.99, step: 0.01 }
+                    }}
+                  />
+                </Grid>
+              </Grid>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Social Media */}
+              <Typography variant="h6" gutterBottom>
+                Social Media Links
+              </Typography>
+              <Grid container spacing={2}>
+                {Object.keys(formData.social_links).map((platform) => (
+                  <Grid item xs={12} sm={6} key={platform}>
+                    <TextField
+                      fullWidth
+                      label={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      name={`social_${platform}`}
+                      value={formData.social_links[platform]}
+                      onChange={handleInputChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            {socialIcons[platform]}
+                          </InputAdornment>
+                        ),
+                      }}
+                      placeholder={platform === 'website' ? 'https://...' : `@username`}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          </Grid>
+
+          {/* Right Column - Media Upload */}
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Profile Photo
+              </Typography>
+              <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+                <Avatar
+                  src={previews.avatar || existingImages.avatar}
+                  sx={{ width: 120, height: 120 }}
+                >
+                  <IconUser size={40} />
+                </Avatar>
+                <Box display="flex" gap={1}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<IconUpload size={18} />}
+                    size="small"
+                  >
+                    Upload
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                    />
+                  </Button>
+                  {(previews.avatar || existingImages.avatar) && (
+                    <IconButton onClick={removeAvatar} size="small" color="error">
+                      <IconTrash size={18} />
+                    </IconButton>
+                  )}
+                </Box>
+              </Box>
+            </Paper>
+
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Gallery Images
+              </Typography>
+              
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                startIcon={<IconPhoto size={18} />}
+                sx={{ mb: 2, borderStyle: 'dashed' }}
+              >
+                Add Images
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  accept="image/*"
+                  onChange={handleGalleryChange}
+                />
+              </Button>
+
+              {/* Existing Images */}
+              {existingImages.gallery.length > 0 && (
+                <Box mb={2}>
+                  <Typography variant="caption" color="text.secondary" gutterBottom>
+                    Current Images
+                  </Typography>
+                  <Box display="flex" flexWrap="wrap" gap={1}>
+                    {existingImages.gallery.map((image, index) => (
+                      <Box key={index} sx={{ position: 'relative' }}>
+                        <img 
+                          src={image.thumb || image.url} 
+                          alt={`Gallery ${index + 1}`}
+                          style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4 }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => removeExistingGalleryImage(index)}
+                          sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper' }}
+                        >
+                          <IconX size={14} />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* New Images */}
+              {previews.gallery_images.length > 0 && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary" gutterBottom>
+                    New Images
+                  </Typography>
+                  <Box display="flex" flexWrap="wrap" gap={1}>
+                    {previews.gallery_images.map((preview, index) => (
+                      <Box key={index} sx={{ position: 'relative' }}>
+                        <img 
+                          src={preview} 
+                          alt={`New ${index + 1}`}
+                          style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4 }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => removeGalleryImage(index)}
+                          sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper' }}
+                        >
+                          <IconX size={14} />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Form Actions */}
+        <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/admin/artists')}
+            disabled={submitLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={submitLoading}
+          >
+            {submitLoading ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                {isEdit ? 'Updating...' : 'Creating...'}
+              </>
+            ) : (
+              <>
+                {isEdit ? 'Update Artist' : 'Create Artist'}
+              </>
+            )}
+          </Button>
+        </Box>
+      </form>
+    </Box>
+  );
+};
+
+export default ArtistsForm;
