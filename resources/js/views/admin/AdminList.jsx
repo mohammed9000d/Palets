@@ -18,12 +18,18 @@ import {
   DialogContent,
   DialogActions,
   Alert,
-  CircularProgress
+  CircularProgress,
+  TextField,
+  InputAdornment,
+  Grid
 } from '@mui/material';
-import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconSearch, IconUsers } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 import MainCard from '../../ui-component/cards/MainCard';
+import TablePagination from '../../components/shared/TablePagination';
+import TableSearch from '../../components/shared/TableSearch';
+import TableLoading from '../../components/shared/TableLoading';
 
 const AdminList = () => {
   const navigate = useNavigate();
@@ -31,16 +37,36 @@ const AdminList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, admin: null });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    per_page: 15,
+    total: 0,
+    last_page: 1
+  });
 
   useEffect(() => {
     fetchAdmins();
-  }, []);
+  }, [searchTerm]);
 
-  const fetchAdmins = async () => {
+  const fetchAdmins = async (page = 1) => {
     try {
-      setLoading(true);
-      const response = await adminAPI.getAll();
-      setAdmins(response.data);
+      if (admins.length === 0) setLoading(true);
+      const params = {
+        page,
+        per_page: pagination.per_page,
+        search: searchTerm || undefined,
+        sort_by: 'created_at',
+        sort_direction: 'desc'
+      };
+      const response = await adminAPI.getAll(params);
+      setAdmins(response.data.data || response.data);
+      setPagination({
+        current_page: response.data.current_page || 1,
+        per_page: response.data.per_page || 15,
+        total: response.data.total || (response.data.length || 0),
+        last_page: response.data.last_page || 1
+      });
       setError('');
     } catch (err) {
       setError('Failed to fetch admins. Please check if the backend server is running.');
@@ -53,12 +79,16 @@ const AdminList = () => {
   const handleDelete = async (admin) => {
     try {
       await adminAPI.delete(admin.id);
-      setAdmins(admins.filter(a => a.id !== admin.id));
+      fetchAdmins(pagination.current_page);
       setDeleteDialog({ open: false, admin: null });
     } catch (err) {
       setError('Failed to delete admin');
       console.error('Error deleting admin:', err);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchAdmins(newPage);
   };
 
   const handleEdit = (admin) => {
@@ -76,7 +106,7 @@ const AdminList = () => {
   if (loading) {
     return (
       <MainCard title="Admin Management">
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
           <CircularProgress />
         </Box>
       </MainCard>
@@ -101,42 +131,32 @@ const AdminList = () => {
           {error}
         </Alert>
       )}
+
+      {/* Search Filter */}
+      <TableSearch
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Search by name or email..."
+      />
       
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflow: 'auto', maxWidth: '100%' }}>
+        <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Role</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Created At</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {admins.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  <Typography variant="body2" color="textSecondary">
-                    No admins found. Create your first admin!
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              admins.map((admin) => (
-                <TableRow key={admin.id}>
+            {admins.map((admin) => (
+                <TableRow key={admin.id} hover>
                   <TableCell>{admin.id}</TableCell>
                   <TableCell>{admin.name}</TableCell>
                   <TableCell>{admin.email}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={admin.role}
-                      color={admin.role === 'super_admin' ? 'primary' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
                   <TableCell>
                     <Chip
                       label={admin.is_active ? 'Active' : 'Inactive'}
@@ -164,11 +184,44 @@ const AdminList = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))
+              ))}
+            
+            {admins.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={6} align="center">
+                  <Box py={4}>
+                    <IconUsers size={48} style={{ opacity: 0.3 }} />
+                    <Typography variant="h6" color="textSecondary" mt={2}>
+                      No admins found
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {searchTerm
+                        ? 'Try adjusting your filters'
+                        : 'Start by creating your first admin'
+                      }
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<IconPlus />}
+                      onClick={() => navigate('/admin/create')}
+                      sx={{ mt: 2 }}
+                    >
+                      Create Admin
+                    </Button>
+                  </Box>
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Pagination */}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        itemName="admins"
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>

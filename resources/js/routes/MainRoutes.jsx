@@ -29,10 +29,6 @@ const ArtistsList = Loadable(lazy(() => import('views/artists/ArtistsList')));
 const ArtistsForm = Loadable(lazy(() => import('views/artists/ArtistsForm')));
 const ArtistView = Loadable(lazy(() => import('views/artists/ArtistView')));
 
-// artworks routing
-const ArtworksList = Loadable(lazy(() => import('views/artworks/ArtworksList')));
-const ArtworksForm = Loadable(lazy(() => import('views/artworks/ArtworksForm')));
-const ArtworkView = Loadable(lazy(() => import('views/artworks/ArtworkView')));
 
 // news routing
 const NewsList = Loadable(lazy(() => import('views/news/NewsList')));
@@ -46,6 +42,9 @@ const ProductsForm = Loadable(lazy(() => import('views/products/ProductsForm')))
 // galleries routing
 const GalleriesList = Loadable(lazy(() => import('views/galleries/GalleriesList')));
 const GalleriesForm = Loadable(lazy(() => import('views/galleries/GalleriesForm')));
+
+// settings routing
+const Settings = Loadable(lazy(() => import('views/settings/Settings')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -111,35 +110,19 @@ const MainRoutes = {
       element: <ArtistView />
     },
     {
-      path: '/admin/artworks',
-      element: <ArtworksList />
-    },
-    {
-      path: '/admin/artworks/create',
-      element: <ArtworksForm />
-    },
-    {
-      path: '/admin/artworks/edit/:slug',
-      element: <ArtworksForm />
-    },
-    {
-      path: '/admin/artworks/view/:slug',
-      element: <ArtworkView />
-    },
-    {
-      path: 'news',
+      path: 'articles',
       element: <NewsList />
     },
     {
-      path: 'news/create',
+      path: 'articles/create',
       element: <NewsForm />
     },
     {
-      path: 'news/:id',
+      path: 'articles/:id',
       element: <NewsView />
     },
     {
-      path: 'news/:id/edit',
+      path: 'articles/:id/edit',
       element: <NewsForm />
     },
     {
@@ -165,6 +148,10 @@ const MainRoutes = {
     {
       path: 'galleries/edit/:slug',
       element: <GalleriesForm />
+    },
+    {
+      path: 'settings',
+      element: <Settings />
     }
   ]
 };

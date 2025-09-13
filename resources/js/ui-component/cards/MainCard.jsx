@@ -4,6 +4,7 @@ import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
+import { useTheme, alpha } from '@mui/material/styles';
 
 // constant
 const headerStyle = {
@@ -26,7 +27,8 @@ const MainCard = function MainCard({
   ref,
   ...others
 }) {
-  const defaultShadow = '0 2px 14px 0 rgb(32 40 45 / 8%)';
+  const theme = useTheme();
+  const defaultShadow = '0 4px 20px 0 rgb(0 0 0 / 8%)';
 
   return (
     <Card
@@ -35,8 +37,12 @@ const MainCard = function MainCard({
       sx={{
         border: border ? '1px solid' : 'none',
         borderColor: 'divider',
+        borderRadius: 3,
+        background: 'linear-gradient(145deg, #ffffff 0%, #fafafa 100%)',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
         ':hover': {
-          boxShadow: boxShadow ? shadow || defaultShadow : 'inherit'
+          boxShadow: boxShadow ? shadow || defaultShadow : '0 4px 16px rgba(0, 0, 0, 0.08)',
+          transition: 'box-shadow 0.2s ease-in-out'
         },
         ...sx
       }}
@@ -48,7 +54,14 @@ const MainCard = function MainCard({
       )}
 
       {/* content & header divider */}
-      {title && <Divider />}
+      {title && (
+        <Divider 
+          sx={{ 
+            borderColor: alpha(theme.palette.primary.main, 0.1),
+            borderWidth: 1
+          }} 
+        />
+      )}
 
       {/* card content */}
       {content && (

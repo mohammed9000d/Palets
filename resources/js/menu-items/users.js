@@ -8,26 +8,11 @@ const icons = { IconUsers, IconUserPlus, IconUser };
 
 const users = {
   id: 'users',
-  title: 'User Management',
-  type: 'group',
-  children: [
-    {
-      id: 'users-list',
-      title: 'Users List',
-      type: 'item',
-      url: '/admin/users',
-      icon: icons.IconUsers,
-      breadcrumbs: false
-    },
-    {
-      id: 'users-create',
-      title: 'Create User',
-      type: 'item',
-      url: '/admin/users/create',
-      icon: icons.IconUserPlus,
-      breadcrumbs: false
-    }
-  ]
+  title: 'Users',
+  type: 'item',
+  url: '/admin/users',
+  icon: icons.IconUsers,
+  breadcrumbs: false
 };
 
 export default users;

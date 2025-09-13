@@ -1,3 +1,5 @@
+import React from 'react';
+
 // material-ui
 import LinearProgress from '@mui/material/LinearProgress';
 import Box from '@mui/material/Box';

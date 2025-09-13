@@ -205,6 +205,7 @@ const UsersForm = () => {
             label="Active"
           />
 
+{/* Newsletter and SMS fields hidden for future use
           <FormControlLabel
             control={
               <Switch
@@ -228,6 +229,7 @@ const UsersForm = () => {
             }
             label="SMS Notifications"
           />
+          */}
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
             <Button

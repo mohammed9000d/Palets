@@ -9,25 +9,10 @@ const icons = { IconShoppingCart, IconPlus, IconPackage, IconTag };
 const products = {
   id: 'products',
   title: 'Products',
-  type: 'group',
-  children: [
-    {
-      id: 'products-list',
-      title: 'All Products',
-      type: 'item',
-      url: '/admin/products',
-      icon: icons.IconShoppingCart,
-      breadcrumbs: false
-    },
-    {
-      id: 'products-create',
-      title: 'Add Product',
-      type: 'item',
-      url: '/admin/products/create',
-      icon: icons.IconPlus,
-      breadcrumbs: false
-    }
-  ]
+  type: 'item',
+  url: '/admin/products',
+  icon: icons.IconShoppingCart,
+  breadcrumbs: false
 };
 
 export default products;

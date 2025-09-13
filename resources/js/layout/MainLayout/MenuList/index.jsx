@@ -1,6 +1,4 @@
 import { memo, useState } from 'react';
-import Divider from '@mui/material/Divider';
-import List from '@mui/material/List';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 
@@ -43,10 +41,7 @@ function MenuList() {
       case 'group':
         if (item.url && item.id !== lastItemId) {
           return (
-            <List key={item.id}>
-              <NavItem item={item} level={1} isParents setSelectedID={() => setSelectedID('')} />
-              {index !== 0 && <Divider sx={{ py: 0.5 }} />}
-            </List>
+            <NavItem key={item.id} item={item} level={1} isParents setSelectedID={() => setSelectedID('')} />
           );
         }
 
@@ -60,6 +55,10 @@ function MenuList() {
             remItems={remItems}
             lastItemId={lastItemId}
           />
+        );
+      case 'item':
+        return (
+          <NavItem key={item.id} item={item} level={1} isParents setSelectedID={() => setSelectedID('')} />
         );
       default:
         return (

@@ -101,6 +101,22 @@ class Artist extends Model implements HasMedia
     }
 
     /**
+     * Relationship: Products that are in stock (for sale)
+     */
+    public function forSaleProducts()
+    {
+        return $this->hasMany(Product::class)->where('in_stock', true);
+    }
+
+    /**
+     * Relationship: Products that are out of stock (not for sale)
+     */
+    public function notForSaleProducts()
+    {
+        return $this->hasMany(Product::class)->where('in_stock', false);
+    }
+
+    /**
      * Relationship: Artist organizes galleries
      */
     public function organizedGalleries()

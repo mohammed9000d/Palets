@@ -44,6 +44,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { galleriesAPI } from '../../services/api';
 import MainCard from '../../ui-component/cards/MainCard';
+import TablePagination from '../../components/shared/TablePagination';
+import TableSearch from '../../components/shared/TableSearch';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-markdown-preview/markdown.css';
 
@@ -69,22 +71,24 @@ const GalleriesList = () => {
 
   const fetchGalleries = async (page = 1) => {
     try {
-      setLoading(true);
+      if (galleries.length === 0) setLoading(true);
       const params = {
         page,
         per_page: pagination.per_page,
         search: searchTerm || undefined,
         status: statusFilter === 'all' ? undefined : statusFilter,
-        period: periodFilter === 'all' ? undefined : periodFilter
+        period: periodFilter === 'all' ? undefined : periodFilter,
+        sort_by: 'created_at',
+        sort_direction: 'desc'
       };
       
       const response = await galleriesAPI.getAll(params);
-      setGalleries(response.data.data);
+      setGalleries(response.data.data || response.data);
       setPagination({
-        current_page: response.data.current_page,
-        per_page: response.data.per_page,
-        total: response.data.total,
-        last_page: response.data.last_page
+        current_page: response.data.current_page || 1,
+        per_page: response.data.per_page || 15,
+        total: response.data.total || (response.data.length || 0),
+        last_page: response.data.last_page || 1
       });
       setError('');
     } catch (err) {
@@ -125,8 +129,8 @@ const GalleriesList = () => {
 
   const getPeriodColor = (gallery) => {
     if (gallery.is_active) return 'success';
-    if (gallery.is_upcoming) return 'info';
-    if (gallery.is_past) return 'default';
+    if (gallery.is_upcoming) return 'primary';
+    if (gallery.is_past) return 'secondary';
     return 'default';
   };
 
@@ -137,7 +141,7 @@ const GalleriesList = () => {
     return 'Unknown';
   };
 
-  if (loading && galleries.length === 0) {
+  if (loading) {
     return (
       <MainCard title="Art Panel Galleries">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -167,62 +171,39 @@ const GalleriesList = () => {
       )}
 
       {/* Filters */}
-      <Card sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              fullWidth
-              placeholder="Search galleries..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <IconSearch />
-                  </InputAdornment>
-                ),
-              }}
-              size="small"
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                label="Status"
-              >
-                <MenuItem value="all">All Status</MenuItem>
-                <MenuItem value="published">Published</MenuItem>
-                <MenuItem value="draft">Draft</MenuItem>
-                <MenuItem value="archived">Archived</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Period</InputLabel>
-              <Select
-                value={periodFilter}
-                onChange={(e) => setPeriodFilter(e.target.value)}
-                label="Period"
-              >
-                <MenuItem value="all">All Periods</MenuItem>
-                <MenuItem value="active">Active Now</MenuItem>
-                <MenuItem value="upcoming">Upcoming</MenuItem>
-                <MenuItem value="past">Past</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Card>
+      <TableSearch
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Search galleries..."
+        filters={[
+          {
+            label: "Status",
+            value: statusFilter,
+            onChange: (e) => setStatusFilter(e.target.value),
+            options: [
+              { value: "all", label: "All Status" },
+              { value: "published", label: "Published" },
+              { value: "draft", label: "Draft" },
+              { value: "archived", label: "Archived" }
+            ]
+          },
+          {
+            label: "Period",
+            value: periodFilter,
+            onChange: (e) => setPeriodFilter(e.target.value),
+            options: [
+              { value: "all", label: "All Periods" },
+              { value: "active", label: "Active Now" },
+              { value: "upcoming", label: "Upcoming" },
+              { value: "past", label: "Past" }
+            ]
+          }
+        ]}
+      />
 
       {/* Galleries Table */}
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflow: 'auto', maxWidth: '100%' }}>
+        <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
               <TableCell>Gallery</TableCell>
@@ -280,13 +261,25 @@ const GalleriesList = () => {
                 
                 <TableCell>
                   <Stack spacing={0.5}>
-                    <Chip 
-                      label={getPeriodLabel(gallery)}
-                      color={getPeriodColor(gallery)}
-                      size="small"
-                      icon={<IconCalendar />}
-                    />
-                    <Typography variant="caption" color="textSecondary">
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <IconCalendar size={16} color={
+                        gallery.is_active ? "success" : 
+                        gallery.is_upcoming ? "primary" : 
+                        gallery.is_past ? "secondary" : "default"
+                      } />
+                      <Typography 
+                        variant="body2" 
+                        fontWeight="medium"
+                        color={
+                          gallery.is_active ? "success.main" : 
+                          gallery.is_upcoming ? "primary.main" : 
+                          gallery.is_past ? "text.secondary" : "text.primary"
+                        }
+                      >
+                        {getPeriodLabel(gallery)}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
                       {gallery.date_period}
                     </Typography>
                   </Stack>
@@ -303,17 +296,28 @@ const GalleriesList = () => {
                         title={
                           <Box>
                             {gallery.participating_artists.slice(0, 3).map(artist => (
-                              <Typography key={artist.id} variant="caption" display="block">
+                              <Typography key={artist.id} variant="caption" display="block" sx={{ color: 'inherit' }}>
                                 {artist.artist_name} {artist.role && `(${artist.role})`}
                               </Typography>
                             ))}
                             {gallery.participating_artists_count > 3 && (
-                              <Typography variant="caption" display="block">
+                              <Typography variant="caption" display="block" sx={{ color: 'inherit' }}>
                                 +{gallery.participating_artists_count - 3} more...
                               </Typography>
                             )}
                           </Box>
                         }
+                        componentsProps={{
+                          tooltip: {
+                            sx: {
+                              bgcolor: 'grey.800',
+                              color: 'common.white',
+                              '& .MuiTooltip-arrow': {
+                                color: 'grey.800',
+                              },
+                            },
+                          },
+                        }}
                       >
                         <IconButton size="small">
                           <IconEye size={14} />
@@ -403,30 +407,11 @@ const GalleriesList = () => {
       </TableContainer>
 
       {/* Pagination */}
-      {pagination.last_page > 1 && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Button
-            onClick={() => fetchGalleries(pagination.current_page - 1)}
-            disabled={pagination.current_page === 1}
-            sx={{ mr: 1 }}
-          >
-            Previous
-          </Button>
-          
-          <Typography variant="body2" sx={{ mx: 2, alignSelf: 'center' }}>
-            Page {pagination.current_page} of {pagination.last_page} 
-            ({pagination.total} total galleries)
-          </Typography>
-          
-          <Button
-            onClick={() => fetchGalleries(pagination.current_page + 1)}
-            disabled={pagination.current_page === pagination.last_page}
-            sx={{ ml: 1 }}
-          >
-            Next
-          </Button>
-        </Box>
-      )}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={(page) => fetchGalleries(page)}
+        itemName="galleries"
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog

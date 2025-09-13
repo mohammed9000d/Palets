@@ -18,12 +18,18 @@ import {
   DialogContent,
   DialogActions,
   Alert,
-  CircularProgress
+  CircularProgress,
+  TextField,
+  InputAdornment,
+  Grid
 } from '@mui/material';
-import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconSearch, IconUsers } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { usersAPI } from '../../services/api';
 import MainCard from '../../ui-component/cards/MainCard';
+import TablePagination from '../../components/shared/TablePagination';
+import TableSearch from '../../components/shared/TableSearch';
+import TableLoading from '../../components/shared/TableLoading';
 
 const UsersList = () => {
   const navigate = useNavigate();
@@ -31,16 +37,36 @@ const UsersList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    per_page: 15,
+    total: 0,
+    last_page: 1
+  });
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [searchTerm]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
     try {
-      setLoading(true);
-      const response = await usersAPI.getAll();
-      setUsers(response.data);
+      if (users.length === 0) setLoading(true);
+      const params = {
+        page,
+        per_page: pagination.per_page,
+        search: searchTerm || undefined,
+        sort_by: 'created_at',
+        sort_direction: 'desc'
+      };
+      const response = await usersAPI.getAll(params);
+      setUsers(response.data.data || response.data);
+      setPagination({
+        current_page: response.data.current_page || 1,
+        per_page: response.data.per_page || 15,
+        total: response.data.total || (response.data.length || 0),
+        last_page: response.data.last_page || 1
+      });
       setError('');
     } catch (err) {
       setError('Failed to fetch users. Please check if the backend server is running.');
@@ -53,12 +79,16 @@ const UsersList = () => {
   const handleDelete = async (user) => {
     try {
       await usersAPI.delete(user.id);
-      setUsers(users.filter(u => u.id !== user.id));
+      fetchUsers(pagination.current_page);
       setDeleteDialog({ open: false, user: null });
     } catch (err) {
       setError('Failed to delete user');
       console.error('Error deleting user:', err);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchUsers(newPage);
   };
 
   const handleEdit = (user) => {
@@ -76,7 +106,7 @@ const UsersList = () => {
   if (loading) {
     return (
       <MainCard title="User Management">
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
           <CircularProgress />
         </Box>
       </MainCard>
@@ -101,9 +131,16 @@ const UsersList = () => {
           {error}
         </Alert>
       )}
+
+      {/* Search Filter */}
+      <TableSearch
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Search by name or email..."
+      />
       
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflow: 'auto', maxWidth: '100%' }}>
+        <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
@@ -111,23 +148,14 @@ const UsersList = () => {
               <TableCell>Email</TableCell>
               <TableCell>Phone</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Newsletter</TableCell>
+{/* <TableCell>Newsletter</TableCell> */}
               <TableCell>Created At</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  <Typography variant="body2" color="textSecondary">
-                    No users found. Create your first user!
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((user) => (
-                <TableRow key={user.id}>
+            {users.map((user) => (
+                <TableRow key={user.id} hover>
                   <TableCell>{user.id}</TableCell>
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -139,6 +167,7 @@ const UsersList = () => {
                       size="small"
                     />
                   </TableCell>
+{/* Newsletter column hidden for future use
                   <TableCell>
                     <Chip
                       label={user.newsletter_subscription ? 'Subscribed' : 'Not Subscribed'}
@@ -146,6 +175,7 @@ const UsersList = () => {
                       size="small"
                     />
                   </TableCell>
+                  */}
                   <TableCell>
                     {new Date(user.created_at).toLocaleDateString()}
                   </TableCell>
@@ -166,11 +196,44 @@ const UsersList = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))
+              ))}
+            
+            {users.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Box py={4}>
+                    <IconUsers size={48} style={{ opacity: 0.3 }} />
+                    <Typography variant="h6" color="textSecondary" mt={2}>
+                      No users found
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {searchTerm
+                        ? 'Try adjusting your filters'
+                        : 'Start by creating your first user'
+                      }
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<IconPlus />}
+                      onClick={() => navigate('/admin/users/create')}
+                      sx={{ mt: 2 }}
+                    >
+                      Create User
+                    </Button>
+                  </Box>
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Pagination */}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        itemName="users"
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>

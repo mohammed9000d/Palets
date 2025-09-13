@@ -12,6 +12,10 @@ export default function Chip(theme) {
       },
       styleOverrides: {
         root: {
+          borderRadius: '8px',
+          fontWeight: 500,
+          fontSize: '0.75rem',
+          height: 28,
           '&.MuiChip-deletable .MuiChip-deleteIcon': {
             color: 'inherit'
           },

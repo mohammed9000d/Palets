@@ -39,8 +39,6 @@ const Register = () => {
     email: '',
     password: '',
     password_confirmation: '',
-    first_name: '',
-    last_name: '',
     phone: '',
     country_code: '+1'
   });
@@ -223,7 +221,7 @@ const Register = () => {
 
           {/* Registration Form */}
           <Box component="form" onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
+            <Grid container spacing={3} sx={{ mb: 2 }}>
               {/* Full Name */}
               <Grid item xs={12}>
                 <TextField
@@ -233,6 +231,7 @@ const Register = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  variant="outlined"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -241,55 +240,30 @@ const Register = () => {
                     ),
                     sx: {
                       borderRadius: 2,
+                      backgroundColor: alpha('#ffffff', 0.9),
                       '& .MuiOutlinedInput-root': {
                         '&:hover fieldset': {
                           borderColor: theme.palette.primary.main,
+                          borderWidth: 2
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: 2
                         }
+                      }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      '&.Mui-focused': {
+                        color: theme.palette.primary.main
                       }
                     }
                   }}
                 />
               </Grid>
 
-              {/* First Name & Last Name */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  name="first_name"
-                  label="First Name"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  InputProps={{
-                    sx: {
-                      borderRadius: 2,
-                      '& .MuiOutlinedInput-root': {
-                        '&:hover fieldset': {
-                          borderColor: theme.palette.primary.main,
-                        }
-                      }
-                    }
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  name="last_name"
-                  label="Last Name"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  InputProps={{
-                    sx: {
-                      borderRadius: 2,
-                      '& .MuiOutlinedInput-root': {
-                        '&:hover fieldset': {
-                          borderColor: theme.palette.primary.main,
-                        }
-                      }
-                    }
-                  }}
-                />
-              </Grid>
 
               {/* Email */}
               <Grid item xs={12}>
@@ -301,6 +275,7 @@ const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  variant="outlined"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -309,10 +284,24 @@ const Register = () => {
                     ),
                     sx: {
                       borderRadius: 2,
+                      backgroundColor: alpha('#ffffff', 0.9),
                       '& .MuiOutlinedInput-root': {
                         '&:hover fieldset': {
                           borderColor: theme.palette.primary.main,
+                          borderWidth: 2
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: 2
                         }
+                      }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      '&.Mui-focused': {
+                        color: theme.palette.primary.main
                       }
                     }
                   }}
@@ -328,13 +317,28 @@ const Register = () => {
                   label="Country Code"
                   value={formData.country_code}
                   onChange={handleChange}
+                  variant="outlined"
                   InputProps={{
                     sx: {
                       borderRadius: 2,
+                      backgroundColor: alpha('#ffffff', 0.9),
                       '& .MuiOutlinedInput-root': {
                         '&:hover fieldset': {
                           borderColor: theme.palette.primary.main,
+                          borderWidth: 2
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: 2
                         }
+                      }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      '&.Mui-focused': {
+                        color: theme.palette.primary.main
                       }
                     }
                   }}
@@ -350,9 +354,10 @@ const Register = () => {
                 <TextField
                   fullWidth
                   name="phone"
-                  label="Phone Number"
+                  label="Phone Number (Optional)"
                   value={formData.phone}
                   onChange={handleChange}
+                  variant="outlined"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -361,10 +366,24 @@ const Register = () => {
                     ),
                     sx: {
                       borderRadius: 2,
+                      backgroundColor: alpha('#ffffff', 0.9),
                       '& .MuiOutlinedInput-root': {
                         '&:hover fieldset': {
                           borderColor: theme.palette.primary.main,
+                          borderWidth: 2
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: 2
                         }
+                      }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      '&.Mui-focused': {
+                        color: theme.palette.primary.main
                       }
                     }
                   }}
@@ -381,6 +400,8 @@ const Register = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  variant="outlined"
+                  helperText="Minimum 8 characters"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -392,6 +413,12 @@ const Register = () => {
                         <IconButton
                           onClick={() => setShowPassword(!showPassword)}
                           edge="end"
+                          sx={{
+                            color: theme.palette.text.secondary,
+                            '&:hover': {
+                              color: theme.palette.primary.main
+                            }
+                          }}
                         >
                           {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
                         </IconButton>
@@ -399,11 +426,31 @@ const Register = () => {
                     ),
                     sx: {
                       borderRadius: 2,
+                      backgroundColor: alpha('#ffffff', 0.9),
                       '& .MuiOutlinedInput-root': {
                         '&:hover fieldset': {
                           borderColor: theme.palette.primary.main,
+                          borderWidth: 2
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: 2
                         }
                       }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      '&.Mui-focused': {
+                        color: theme.palette.primary.main
+                      }
+                    }
+                  }}
+                  FormHelperTextProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      fontSize: '0.75rem'
                     }
                   }}
                 />
@@ -419,6 +466,8 @@ const Register = () => {
                   value={formData.password_confirmation}
                   onChange={handleChange}
                   required
+                  variant="outlined"
+                  helperText="Must match password"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -430,6 +479,12 @@ const Register = () => {
                         <IconButton
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           edge="end"
+                          sx={{
+                            color: theme.palette.text.secondary,
+                            '&:hover': {
+                              color: theme.palette.primary.main
+                            }
+                          }}
                         >
                           {showConfirmPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
                         </IconButton>
@@ -437,16 +492,84 @@ const Register = () => {
                     ),
                     sx: {
                       borderRadius: 2,
+                      backgroundColor: alpha('#ffffff', 0.9),
                       '& .MuiOutlinedInput-root': {
                         '&:hover fieldset': {
                           borderColor: theme.palette.primary.main,
+                          borderWidth: 2
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: 2
                         }
                       }
+                    }
+                  }}
+                  InputLabelProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      '&.Mui-focused': {
+                        color: theme.palette.primary.main
+                      }
+                    }
+                  }}
+                  FormHelperTextProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      fontSize: '0.75rem'
                     }
                   }}
                 />
               </Grid>
             </Grid>
+
+            {/* Terms and Conditions */}
+            <Box sx={{ mt: 3, mb: 3 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', lineHeight: 1.6 }}>
+                By creating an account, you agree to our{' '}
+                <Button
+                  component={Link}
+                  to="/terms"
+                  variant="text"
+                  sx={{
+                    textTransform: 'none',
+                    color: theme.palette.primary.main,
+                    fontWeight: 600,
+                    fontSize: 'inherit',
+                    textDecoration: 'underline',
+                    p: 0,
+                    minWidth: 'auto',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  Terms of Service
+                </Button>
+                {' '}and{' '}
+                <Button
+                  component={Link}
+                  to="/privacy"
+                  variant="text"
+                  sx={{
+                    textTransform: 'none',
+                    color: theme.palette.primary.main,
+                    fontWeight: 600,
+                    fontSize: 'inherit',
+                    textDecoration: 'underline',
+                    p: 0,
+                    minWidth: 'auto',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  Privacy Policy
+                </Button>
+              </Typography>
+            </Box>
 
             <Button
               type="submit"
@@ -454,10 +577,10 @@ const Register = () => {
               variant="contained"
               size="large"
               disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <IconUserPlus size={20} />}
               sx={{
-                mt: 4,
-                py: 1.5,
-                borderRadius: 2,
+                py: 1.8,
+                borderRadius: 3,
                 textTransform: 'none',
                 fontSize: '1.1rem',
                 fontWeight: 600,
@@ -465,20 +588,18 @@ const Register = () => {
                 boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
                 '&:hover': {
                   boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
-                  transform: 'translateY(-2px)'
+                  transform: 'translateY(-2px)',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.9)}, ${alpha(theme.palette.secondary.main, 0.9)})`
                 },
                 '&:disabled': {
-                  transform: 'none'
+                  transform: 'none',
+                  background: alpha(theme.palette.primary.main, 0.6)
                 },
-                transition: 'all 0.3s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 mb: 3
               }}
             >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                'Create Account'
-              )}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
 
             <Box sx={{ textAlign: 'center' }}>

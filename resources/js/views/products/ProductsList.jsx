@@ -46,6 +46,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { productsAPI } from '../../services/api';
 import MainCard from '../../ui-component/cards/MainCard';
+import TablePagination from '../../components/shared/TablePagination';
+import TableSearch from '../../components/shared/TableSearch';
 
 const ProductsList = () => {
   const navigate = useNavigate();
@@ -69,22 +71,24 @@ const ProductsList = () => {
 
   const fetchProducts = async (page = 1) => {
     try {
-      setLoading(true);
+      if (products.length === 0) setLoading(true);
       const params = {
         page,
         per_page: pagination.per_page,
         search: searchTerm || undefined,
         status: statusFilter === 'all' ? undefined : statusFilter,
-        in_stock: stockFilter === 'all' ? undefined : stockFilter === 'in_stock'
+        in_stock: stockFilter === 'all' ? undefined : stockFilter === 'in_stock',
+        sort_by: 'created_at',
+        sort_direction: 'desc'
       };
       
       const response = await productsAPI.getAll(params);
-      setProducts(response.data.data);
+      setProducts(response.data.data || response.data);
       setPagination({
-        current_page: response.data.current_page,
-        per_page: response.data.per_page,
-        total: response.data.total,
-        last_page: response.data.last_page
+        current_page: response.data.current_page || 1,
+        per_page: response.data.per_page || 15,
+        total: response.data.total || (response.data.length || 0),
+        last_page: response.data.last_page || 1
       });
       setError('');
     } catch (err) {
@@ -153,9 +157,9 @@ const ProductsList = () => {
     return <Typography variant="body2">{regularPrice}</Typography>;
   };
 
-  if (loading && products.length === 0) {
+  if (loading) {
     return (
-      <MainCard title="Products">
+      <MainCard title="Products Management">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
           <CircularProgress />
         </Box>
@@ -183,61 +187,38 @@ const ProductsList = () => {
       )}
 
       {/* Filters */}
-      <Card sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              fullWidth
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <IconSearch />
-                  </InputAdornment>
-                ),
-              }}
-              size="small"
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                label="Status"
-              >
-                <MenuItem value="all">All Status</MenuItem>
-                <MenuItem value="published">Published</MenuItem>
-                <MenuItem value="draft">Draft</MenuItem>
-                <MenuItem value="archived">Archived</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Stock</InputLabel>
-              <Select
-                value={stockFilter}
-                onChange={(e) => setStockFilter(e.target.value)}
-                label="Stock"
-              >
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="in_stock">In Stock</MenuItem>
-                <MenuItem value="out_of_stock">Out of Stock</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Card>
+      <TableSearch
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Search products..."
+        filters={[
+          {
+            label: "Status",
+            value: statusFilter,
+            onChange: (e) => setStatusFilter(e.target.value),
+            options: [
+              { value: "all", label: "All Status" },
+              { value: "published", label: "Published" },
+              { value: "draft", label: "Draft" },
+              { value: "archived", label: "Archived" }
+            ]
+          },
+          {
+            label: "Stock",
+            value: stockFilter,
+            onChange: (e) => setStockFilter(e.target.value),
+            options: [
+              { value: "all", label: "All" },
+              { value: "in_stock", label: "In Stock" },
+              { value: "out_of_stock", label: "Out of Stock" }
+            ]
+          }
+        ]}
+      />
 
       {/* Products Table */}
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflow: 'auto', maxWidth: '100%' }}>
+        <Table sx={{ minWidth: 750 }}>
           <TableHead>
             <TableRow>
               <TableCell>Product</TableCell>
@@ -323,15 +304,15 @@ const ProductsList = () => {
                 
                 <TableCell>
                   {product.is_custom_dimension ? (
-                    <Chip 
-                      label="Available" 
-                      color="info" 
-                      size="small"
-                      icon={<IconTag />}
-                    />
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <IconTag size={16} color="primary" />
+                      <Typography variant="body2" color="primary.main" fontWeight="medium">
+                        Available
+                      </Typography>
+                    </Box>
                   ) : (
-                    <Typography variant="caption" color="textSecondary">
-                      Standard
+                    <Typography variant="body2" color="text.secondary">
+                      Standard Only
                     </Typography>
                   )}
                 </TableCell>
@@ -393,30 +374,11 @@ const ProductsList = () => {
       </TableContainer>
 
       {/* Pagination */}
-      {pagination.last_page > 1 && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Button
-            onClick={() => fetchProducts(pagination.current_page - 1)}
-            disabled={pagination.current_page === 1}
-            sx={{ mr: 1 }}
-          >
-            Previous
-          </Button>
-          
-          <Typography variant="body2" sx={{ mx: 2, alignSelf: 'center' }}>
-            Page {pagination.current_page} of {pagination.last_page} 
-            ({pagination.total} total products)
-          </Typography>
-          
-          <Button
-            onClick={() => fetchProducts(pagination.current_page + 1)}
-            disabled={pagination.current_page === pagination.last_page}
-            sx={{ ml: 1 }}
-          >
-            Next
-          </Button>
-        </Box>
-      )}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={(page) => fetchProducts(page)}
+        itemName="products"
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog

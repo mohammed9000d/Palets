@@ -14,6 +14,8 @@ export default defineConfig({
         react({
             // Configure React plugin to avoid preamble issues
             include: "**/*.{jsx,tsx}",
+            // Disable fast refresh to avoid preamble issues
+            fastRefresh: false,
             babel: {
                 plugins: [],
             },
@@ -21,6 +23,14 @@ export default defineConfig({
         tailwindcss(),
         jsconfigPaths(),
     ],
+    server: {
+        hmr: {
+            host: 'localhost',
+        },
+    },
+    define: {
+        global: 'globalThis',
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'resources/js'),

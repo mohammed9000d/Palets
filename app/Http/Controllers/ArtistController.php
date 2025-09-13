@@ -56,8 +56,9 @@ class ArtistController extends Controller
                 'commission_rate' => $artist->commission_rate,
                 'avatar_url' => $artist->avatar_url,
                 'avatar_thumb_url' => $artist->avatar_thumb_url,
-                'works_count' => $artist->works()->count(),
-                'published_works_count' => $artist->publishedWorks()->count(),
+                'products_count' => $artist->products()->count(),
+                'for_sale_products_count' => $artist->forSaleProducts()->count(),
+                'not_for_sale_products_count' => $artist->notForSaleProducts()->count(),
                 'created_at' => $artist->created_at,
                 'updated_at' => $artist->updated_at,
             ];
@@ -336,8 +337,9 @@ class ArtistController extends Controller
                     'name' => $media->name,
                 ];
             }),
-            'works_count' => $artist->works()->count(),
-            'published_works_count' => $artist->publishedWorks()->count(),
+            'products_count' => $artist->products()->count(),
+            'for_sale_products_count' => $artist->forSaleProducts()->count(),
+            'not_for_sale_products_count' => $artist->notForSaleProducts()->count(),
             'created_at' => $artist->created_at,
             'updated_at' => $artist->updated_at,
         ];

@@ -35,5 +35,13 @@ class DatabaseSeeder extends Seeder
         
         // Seed news
         $this->call(NewsSeeder::class);
+
+        // Seed fake data for testing
+        $this->call(FakeUsersSeeder::class);
+        $this->call(FakeAdminsSeeder::class);
+        $this->call(FakeArtistsSeeder::class);
+        $this->call(FakeProductsSeeder::class);
+        $this->call(FakeGalleriesSeeder::class);
+        $this->call(FakeArticlesSeeder::class);
     }
 }

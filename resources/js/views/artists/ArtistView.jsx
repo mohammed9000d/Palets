@@ -353,42 +353,6 @@ const ArtistView = () => {
                   </Grid>
                 )}
 
-                <Grid item xs={12} sm={6}>
-                  <Box
-                    sx={{
-                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.primary.light, 0.05)} 100%)`,
-                      borderRadius: 3,
-                      p: 3,
-                      border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                      transition: 'transform 0.2s ease',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.15)}`
-                      }
-                    }}
-                  >
-                    <Box display="flex" alignItems="center" gap={2} mb={1}>
-                      <Box
-                        sx={{
-                          backgroundColor: theme.palette.primary.main,
-                          borderRadius: 2,
-                          p: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <IconPalette size={20} style={{ color: 'white' }} />
-                      </Box>
-                      <Typography variant="h6" fontWeight={600}>
-                        Works Count
-                      </Typography>
-                    </Box>
-                    <Typography variant="h4" fontWeight={700} color="primary.main">
-                      {artist.works_count || 0} artworks
-                    </Typography>
-                  </Box>
-                </Grid>
               </Grid>
 
               {/* Social Links */}

@@ -31,7 +31,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
 
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
-  const isSelected = !!matchPath({ path: item?.link ? item.link : item.url, end: false }, pathname);
+  const isSelected = !!matchPath({ path: item?.link ? item.link : item.url, end: item.url === '/admin' }, pathname);
 
   const [hoverStatus, setHover] = useState(false);
 
@@ -79,7 +79,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
         sx={{
           zIndex: 1201,
           borderRadius: `${borderRadius}px`,
-          mb: 0.5,
+          mb: 1,
           ...(drawerOpen && level !== 1 && { ml: `${level * 18}px` }),
           ...(!drawerOpen && { pl: 1.25 }),
           ...(drawerOpen &&

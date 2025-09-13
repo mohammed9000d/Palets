@@ -20,6 +20,16 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
     @vite(['resources/css/app.css'])
+    @if (app()->environment('local'))
+        <script type="module">
+            // Fix for @vitejs/plugin-react preamble detection issue
+            if (typeof window !== 'undefined') {
+                window.__vite_plugin_react_preamble_installed__ = true;
+                window.$RefreshReg$ = () => {};
+                window.$RefreshSig$ = () => (type) => type;
+            }
+        </script>
+    @endif
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

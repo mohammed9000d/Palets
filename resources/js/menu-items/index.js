@@ -5,11 +5,12 @@ import artists from './artists';
 import products from './products';
 import galleries from './galleries';
 import news from './news';
+import settings from './settings';
 
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems = {
-  items: [dashboard, artists, products, galleries, news, users, admin]
+  items: [dashboard, admin, users, artists, products, galleries, news, settings]
 };
 
 export default menuItems;

@@ -12,9 +12,28 @@ class AdminController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $admins = Admin::all();
+        $query = Admin::query();
+
+        // Search functionality
+        if ($request->has('search') && $request->search) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDirection = $request->get('sort_direction', 'desc');
+        $query->orderBy($sortBy, $sortDirection);
+
+        // Pagination
+        $perPage = $request->get('per_page', 15);
+        $admins = $query->paginate($perPage);
+        
         return response()->json($admins);
     }
 

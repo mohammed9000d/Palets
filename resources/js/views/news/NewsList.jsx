@@ -22,14 +22,19 @@ import {
   DialogTitle,
   Avatar,
   Alert,
-  CircularProgress
+  CircularProgress,
+  TextField,
+  InputAdornment,
+  Grid
 } from '@mui/material';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
+import TablePagination from '../../components/shared/TablePagination';
+import TableSearch from '../../components/shared/TableSearch';
 
 // icons
-import { IconEdit, IconTrash, IconPlus, IconEye } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconEye, IconSearch, IconNews } from '@tabler/icons-react';
 
 // api
 import { newsApi } from 'services/api';
@@ -45,16 +50,34 @@ const NewsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, newsItem: null });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    per_page: 15,
+    total: 0,
+    last_page: 1
+  });
 
   useEffect(() => {
     fetchNews();
-  }, []);
+  }, [searchTerm]);
 
-  const fetchNews = async () => {
+  const fetchNews = async (page = 1) => {
     try {
-      setLoading(true);
-      const response = await newsApi.getAll();
+      if (news.length === 0) setLoading(true);
+      const params = {
+        page,
+        per_page: pagination.per_page,
+        search: searchTerm || undefined
+      };
+      const response = await newsApi.getAll(params);
       setNews(response.data.data || []);
+      setPagination({
+        current_page: response.data.current_page || 1,
+        per_page: response.data.per_page || 15,
+        total: response.data.total || 0,
+        last_page: response.data.last_page || 1
+      });
       setError('');
     } catch (err) {
       setError('Failed to fetch news. Please check if the backend server is running.');
@@ -67,12 +90,16 @@ const NewsList = () => {
   const handleDelete = async (newsItem) => {
     try {
       await newsApi.delete(newsItem.id);
-      setNews(news.filter(item => item.id !== newsItem.id));
+      fetchNews(pagination.current_page);
       setDeleteDialog({ open: false, newsItem: null });
     } catch (err) {
       setError('Failed to delete news');
       console.error('Error deleting news:', err);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchNews(newPage);
   };
 
   const handleEdit = (newsItem) => {
@@ -123,9 +150,16 @@ const NewsList = () => {
           {error}
         </Alert>
       )}
+
+      {/* Search Filter */}
+      <TableSearch
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Search by title or author..."
+      />
       
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflow: 'auto', maxWidth: '100%' }}>
+        <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
@@ -137,17 +171,8 @@ const NewsList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {news.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  <Typography variant="body2" color="textSecondary">
-                    No news articles found. Create your first news article!
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              news.map((item) => (
-                <TableRow key={item.id}>
+            {news.map((item) => (
+                <TableRow key={item.id} hover>
                   <TableCell>{item.id}</TableCell>
                   <TableCell>
                     {item.cover_photo ? (
@@ -231,11 +256,44 @@ const NewsList = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))
+              ))}
+            
+            {news.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={6} align="center">
+                  <Box py={4}>
+                    <IconNews size={48} style={{ opacity: 0.3 }} />
+                    <Typography variant="h6" color="textSecondary" mt={2}>
+                      No articles found
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {searchTerm
+                        ? 'Try adjusting your filters'
+                        : 'Start by creating your first article'
+                      }
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<IconPlus />}
+                      onClick={() => navigate('/admin/articles/create')}
+                      sx={{ mt: 2 }}
+                    >
+                      Create Article
+                    </Button>
+                  </Box>
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Pagination */}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        itemName="articles"
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>

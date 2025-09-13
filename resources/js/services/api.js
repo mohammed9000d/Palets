@@ -82,7 +82,7 @@ api.interceptors.response.use(
 // Admin API endpoints
 export const adminAPI = {
   // Get all admins
-  getAll: () => api.get('/admins'),
+  getAll: (params = {}) => api.get('/admins', { params }),
   
   // Get single admin
   getById: (id) => api.get(`/admins/${id}`),
@@ -100,7 +100,7 @@ export const adminAPI = {
 // Users API endpoints
 export const usersAPI = {
   // Get all users
-  getAll: () => api.get('/users'),
+  getAll: (params = {}) => api.get('/users', { params }),
   
   // Get single user
   getById: (id) => api.get(`/users/${id}`),
@@ -177,83 +177,8 @@ export const artistsAPI = {
   // Delete artist
   delete: (slug) => api.delete(`/artists/${slug}`),
   
-  // Get artist's works
-  getWorks: (slug, params = {}) => api.get(`/artists/${slug}/works`, { params }),
 };
 
-// Artist Works API endpoints
-export const artworksAPI = {
-  // Get all artworks
-  getAll: (params = {}) => api.get('/artist-works', { params }),
-  
-  // Get single artwork by slug
-  getBySlug: (slug) => api.get(`/artist-works/${slug}`),
-  
-  // Create new artwork
-  create: (data) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (key === 'cover_image' && data[key]) {
-        formData.append('cover_image', data[key]);
-      } else if (key === 'images' && data[key]) {
-        data[key].forEach(file => formData.append('images[]', file));
-      } else if (key === 'tags' && data[key]) {
-        formData.append('tags', JSON.stringify(data[key]));
-      } else if (key === 'is_for_sale' || key === 'is_featured') {
-        formData.append(key, data[key] ? '1' : '0');
-      } else if (data[key] !== null && data[key] !== undefined && data[key] !== '') {
-        formData.append(key, data[key]);
-      }
-    });
-    return api.post('/artist-works', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  },
-  
-  // Update artwork
-  update: (slug, data) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (key === 'cover_image' && data[key]) {
-        formData.append('cover_image', data[key]);
-      } else if (key === 'images' && data[key]) {
-        data[key].forEach(file => formData.append('images[]', file));
-      } else if (key === 'tags' && data[key]) {
-        formData.append('tags', JSON.stringify(data[key]));
-      } else if (key === 'is_for_sale' || key === 'is_featured') {
-        formData.append(key, data[key] ? '1' : '0');
-      } else if (key === 'remove_cover_image') {
-        formData.append(key, data[key] ? '1' : '0');
-      } else if (key === 'existing_image_ids') {
-        formData.append(key, JSON.stringify(data[key]));
-      } else if (data[key] !== null && data[key] !== undefined && data[key] !== '') {
-        formData.append(key, data[key]);
-      }
-    });
-    formData.append('_method', 'PUT');
-    return api.post(`/artist-works/${slug}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  },
-  
-  // Delete artwork
-  delete: (slug) => api.delete(`/artist-works/${slug}`),
-  
-  // Toggle featured status
-  toggleFeatured: (slug) => api.post(`/artist-works/${slug}/toggle-featured`),
-  
-  // Toggle for sale status
-  toggleForSale: (slug) => api.post(`/artist-works/${slug}/toggle-for-sale`),
-  
-  // Like artwork
-  like: (slug) => api.post(`/artist-works/${slug}/like`),
-  
-  // Get all tags
-  getTags: () => api.get('/tags'),
-  
-  // Alias for getTags (for consistency)
-  getAllTags: () => api.get('/tags'),
-};
 
 // Products API endpoints
 export const productsAPI = {

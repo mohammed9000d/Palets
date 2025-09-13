@@ -29,7 +29,7 @@ const AdminForm = () => {
     name: '',
     email: '',
     password: '',
-    role: 'admin',
+    role: 'super_admin',
     is_active: true
   });
   
@@ -46,7 +46,7 @@ const AdminForm = () => {
           name: admin.name,
           email: admin.email,
           password: '', // Don't populate password for security
-          role: admin.role,
+          role: 'super_admin', // Always set to super_admin for now
           is_active: admin.is_active
         });
       } else {
@@ -65,7 +65,7 @@ const AdminForm = () => {
         name: admin.name,
         email: admin.email,
         password: '',
-        role: admin.role,
+        role: 'super_admin', // Always set to super_admin for now
         is_active: admin.is_active
       });
     } catch (err) {
@@ -178,19 +178,6 @@ const AdminForm = () => {
             disabled={loading}
           />
 
-          <FormControl fullWidth>
-            <InputLabel>Role</InputLabel>
-            <Select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              label="Role"
-              disabled={loading}
-            >
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="super_admin">Super Admin</MenuItem>
-            </Select>
-          </FormControl>
 
           <FormControlLabel
             control={

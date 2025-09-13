@@ -8,26 +8,11 @@ const icons = { IconUsers, IconUserPlus, IconSettings };
 
 const admin = {
   id: 'admin',
-  title: 'Admin Management',
-  type: 'group',
-  children: [
-    {
-      id: 'admin-list',
-      title: 'Admin List',
-      type: 'item',
-      url: '/admin/list',
-      icon: icons.IconUsers,
-      breadcrumbs: false
-    },
-    {
-      id: 'admin-create',
-      title: 'Create Admin',
-      type: 'item',
-      url: '/admin/create',
-      icon: icons.IconUserPlus,
-      breadcrumbs: false
-    }
-  ]
+  title: 'Admins',
+  type: 'item',
+  url: '/admin/list',
+  icon: icons.IconUsers,
+  breadcrumbs: false
 };
 
 export default admin;

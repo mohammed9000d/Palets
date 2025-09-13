@@ -73,11 +73,7 @@ const AddToCartButton = ({
   };
 
   const isProductAvailable = () => {
-    if (productType === 'artwork') {
-      return product?.is_for_sale;
-    } else {
-      return product?.in_stock;
-    }
+    return product?.in_stock;
   };
 
   const getButtonText = () => {

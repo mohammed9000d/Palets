@@ -39,6 +39,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { artistsAPI } from '../../services/api';
 import MainCard from '../../ui-component/cards/MainCard';
+import TablePagination from '../../components/shared/TablePagination';
+import TableSearch from '../../components/shared/TableSearch';
 
 const ArtistsList = () => {
   const navigate = useNavigate();
@@ -61,21 +63,23 @@ const ArtistsList = () => {
 
   const fetchArtists = async (page = 1) => {
     try {
-      setLoading(true);
+      if (artists.length === 0) setLoading(true);
       const params = {
         page,
         per_page: pagination.per_page,
         search: searchTerm || undefined,
-        active: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined
+        active: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
+        sort_by: 'created_at',
+        sort_direction: 'desc'
       };
       
       const response = await artistsAPI.getAll(params);
-      setArtists(response.data.data);
+      setArtists(response.data.data || response.data);
       setPagination({
-        current_page: response.data.current_page,
-        per_page: response.data.per_page,
-        total: response.data.total,
-        last_page: response.data.last_page
+        current_page: response.data.current_page || 1,
+        per_page: response.data.per_page || 15,
+        total: response.data.total || (response.data.length || 0),
+        last_page: response.data.last_page || 1
       });
       setError('');
     } catch (err) {
@@ -117,7 +121,7 @@ const ArtistsList = () => {
     fetchArtists(newPage);
   };
 
-  if (loading && artists.length === 0) {
+  if (loading) {
     return (
       <MainCard title="Artists Management">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -147,71 +151,39 @@ const ArtistsList = () => {
       )}
 
       {/* Filters */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            fullWidth
-            placeholder="Search artists..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <IconSearch size={20} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              label="Status"
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
+      <TableSearch
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Search artists..."
+        filters={[
+          {
+            label: "Status",
+            value: statusFilter,
+            onChange: (e) => setStatusFilter(e.target.value),
+            options: [
+              { value: "all", label: "All Status" },
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" }
+            ]
+          }
+        ]}
+      />
 
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflow: 'auto', maxWidth: '100%' }}>
+        <Table sx={{ minWidth: 700 }}>
           <TableHead>
             <TableRow>
               <TableCell>Avatar</TableCell>
               <TableCell>Artist Name</TableCell>
               <TableCell>Specialties</TableCell>
-              <TableCell>Works Count</TableCell>
+              <TableCell>Products Count</TableCell>
               <TableCell>Commission Rate</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {artists.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  <Box py={3}>
-                    <IconUsers size={48} stroke={1.5} style={{ color: '#ccc' }} />
-                    <Typography variant="h6" color="textSecondary" sx={{ mt: 2 }}>
-                      No artists found
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {searchTerm || statusFilter !== 'all' 
-                        ? 'Try adjusting your filters' 
-                        : 'Start by adding your first artist'
-                      }
-                    </Typography>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ) : (
-              artists.map((artist) => (
+            {artists.map((artist) => (
                 <TableRow key={artist.id} hover>
                   <TableCell>
                     <Avatar
@@ -238,13 +210,24 @@ const ArtistsList = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Box>
-                      <Typography variant="body2">
-                        Total: {artist.works_count}
+                    <Box display="flex" flexDirection="column" gap={0.5}>
+                      <Typography variant="body2" fontWeight="medium">
+                        Total: {artist.products_count || 0}
                       </Typography>
-                      <Typography variant="body2" color="primary">
-                        Published: {artist.published_works_count}
-                      </Typography>
+                      <Box display="flex" gap={0.5}>
+                        <Chip
+                          label={`For Sale: ${artist.for_sale_products_count || 0}`}
+                          size="small"
+                          color="success"
+                          sx={{ fontSize: '0.75rem' }}
+                        />
+                        <Chip
+                          label={`Not For Sale: ${artist.not_for_sale_products_count || 0}`}
+                          size="small"
+                          color="default"
+                          sx={{ fontSize: '0.75rem' }}
+                        />
+                      </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
@@ -282,35 +265,44 @@ const ArtistsList = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))
+              ))}
+            
+            {artists.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Box py={4}>
+                    <IconUsers size={48} style={{ opacity: 0.3 }} />
+                    <Typography variant="h6" color="textSecondary" mt={2}>
+                      No artists found
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {searchTerm || statusFilter !== 'all'
+                        ? 'Try adjusting your filters'
+                        : 'Start by creating your first artist'
+                      }
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<IconPlus />}
+                      onClick={() => navigate('/admin/artists/create')}
+                      sx={{ mt: 2 }}
+                    >
+                      Create Artist
+                    </Button>
+                  </Box>
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
       {/* Pagination */}
-      {pagination.last_page > 1 && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Button
-            disabled={pagination.current_page === 1}
-            onClick={() => handlePageChange(pagination.current_page - 1)}
-            sx={{ mr: 1 }}
-          >
-            Previous
-          </Button>
-          <Typography variant="body2" sx={{ mx: 2, alignSelf: 'center' }}>
-            Page {pagination.current_page} of {pagination.last_page} 
-            ({pagination.total} total artists)
-          </Typography>
-          <Button
-            disabled={pagination.current_page === pagination.last_page}
-            onClick={() => handlePageChange(pagination.current_page + 1)}
-            sx={{ ml: 1 }}
-          >
-            Next
-          </Button>
-        </Box>
-      )}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        itemName="artists"
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>
@@ -318,7 +310,7 @@ const ArtistsList = () => {
         <DialogContent>
           <Typography>
             Are you sure you want to delete "{deleteDialog.artist?.artist_name}"? 
-            This action cannot be undone and will also delete all associated artworks.
+            This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
