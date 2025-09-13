@@ -1,6 +1,3 @@
-// material-ui
-import { alpha } from '@mui/material/styles';
-
 // project imports
 import componentsOverrides from './overrides';
 
@@ -10,57 +7,11 @@ export default function componentStyleOverrides(theme, borderRadius, outlinedFil
   const menuSelected = theme.palette.secondary.dark;
 
   return {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          overflowX: 'hidden',
-          scrollBehavior: 'smooth',
-          margin: 0,
-          padding: 0
-        },
-        html: {
-          overflowX: 'hidden'
-        },
-        '*': {
-          '&::-webkit-scrollbar': {
-            width: '8px',
-            height: '8px'
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: theme.palette.grey[100]
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: theme.palette.grey[400],
-            borderRadius: '4px',
-            '&:hover': {
-              backgroundColor: theme.palette.grey[500]
-            }
-          }
-        }
-      }
-    },
     MuiButton: {
       styleOverrides: {
         root: {
-          fontWeight: 600,
-          borderRadius: '8px',
-          textTransform: 'none',
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)'
-          }
-        },
-        containedPrimary: {
-          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-          '&:hover': {
-            background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
-          }
-        },
-        containedSecondary: {
-          background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
-          '&:hover': {
-            background: `linear-gradient(135deg, ${theme.palette.secondary.dark} 0%, ${theme.palette.secondary.main} 100%)`,
-          }
+          fontWeight: 500,
+          borderRadius: '4px'
         }
       }
     },
@@ -79,13 +30,7 @@ export default function componentStyleOverrides(theme, borderRadius, outlinedFil
       },
       styleOverrides: {
         root: {
-          backgroundImage: 'none',
-          borderRadius: '12px',
-          border: `1px solid ${theme.palette.grey[200]}`,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          '&:hover': {
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-          }
+          backgroundImage: 'none'
         },
         rounded: {
           borderRadius: `${borderRadius}px`
@@ -183,20 +128,12 @@ export default function componentStyleOverrides(theme, borderRadius, outlinedFil
       styleOverrides: {
         root: {
           background: outlinedFilled ? bgColor : 'transparent',
-          borderRadius: '8px',
-          transition: 'all 0.2s ease-in-out',
+          borderRadius: `${borderRadius}px`,
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: theme.palette.grey[300],
-            borderWidth: 1
+            borderColor: theme.palette.grey[400]
           },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: theme.palette.primary.main,
-            borderWidth: 2
-          },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: theme.palette.primary.main,
-            borderWidth: 2,
-            boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
+          '&:hover $notchedOutline': {
+            borderColor: theme.palette.primary.light
           },
           '&.MuiInputBase-multiline': {
             padding: 1
@@ -340,70 +277,12 @@ export default function componentStyleOverrides(theme, borderRadius, outlinedFil
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderColor: 'transparent',
+          borderColor: theme.palette.grey[200],
           '&.MuiTableCell-head': {
             fontSize: '0.875rem',
             color: theme.palette.grey[900],
-            fontWeight: 600,
-            backgroundColor: `linear-gradient(135deg, ${theme.palette.grey[50]} 0%, ${theme.palette.grey[100]} 100%)`,
-            borderBottom: 'none'
-          },
-          '&.MuiTableCell-body': {
-            fontSize: '0.875rem',
-            padding: '16px',
-            borderBottom: 'none'
+            fontWeight: 500
           }
-        }
-      }
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          transition: 'background-color 0.15s ease',
-          '&:hover': {
-            backgroundColor: `${alpha(theme.palette.primary.main, 0.02)} !important`
-          },
-          '&.MuiTableRow-hover:hover': {
-            backgroundColor: `${alpha(theme.palette.primary.main, 0.03)} !important`
-          }
-        }
-      }
-    },
-    MuiTableContainer: {
-      styleOverrides: {
-        root: {
-          borderRadius: '12px',
-          border: `1px solid ${theme.palette.grey[200]}`,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          maxWidth: '100%',
-          '&::-webkit-scrollbar': {
-            width: '6px',
-            height: '6px'
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: alpha(theme.palette.grey[200], 0.5),
-            borderRadius: '3px'
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: alpha(theme.palette.primary.main, 0.3),
-            borderRadius: '3px',
-            '&:hover': {
-              backgroundColor: alpha(theme.palette.primary.main, 0.5)
-            }
-          },
-          '&::-webkit-scrollbar-corner': {
-            backgroundColor: 'transparent'
-          }
-        }
-      }
-    },
-    MuiTable: {
-      styleOverrides: {
-        root: {
-          minWidth: '100%',
-          tableLayout: 'auto'
         }
       }
     },

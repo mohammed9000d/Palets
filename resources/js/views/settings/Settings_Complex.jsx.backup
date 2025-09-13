@@ -1,0 +1,500 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+  Divider,
+  Avatar,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Switch,
+  FormControlLabel,
+  Stack,
+  Chip,
+  CircularProgress
+} from '@mui/material';
+import {
+  IconSettings,
+  IconPalette,
+  IconPhoto,
+  IconUpload,
+  IconDeviceFloppy,
+  IconRefresh
+} from '@tabler/icons-react';
+import MainCard from '../../ui-component/cards/MainCard';
+import { useSettings } from '../../contexts/SettingsContext';
+
+const Settings = () => {
+  const { 
+    settings: globalSettings, 
+    loading: globalLoading, 
+    updateSettings, 
+    resetSettings,
+    getSetting 
+  } = useSettings();
+
+  const [settings, setSettings] = useState({
+    siteName: 'Palets Admin',
+    siteDescription: 'Art Gallery Management System',
+    logo: null,
+    darkMode: false,
+    itemsPerPage: 15,
+    autoSave: true,
+    showAnimations: true
+  });
+
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  // Load settings from global context
+  useEffect(() => {
+    if (!globalLoading && globalSettings) {
+      setSettings({
+        siteName: globalSettings.site_name || 'Palets Admin',
+        siteDescription: globalSettings.site_description || 'Art Gallery Management System',
+        logo: null,
+        itemsPerPage: globalSettings.items_per_page || 15,
+        // Hidden fields - keep defaults but don't load from backend
+        darkMode: false,
+        autoSave: true,
+        showAnimations: true
+      });
+      
+      if (globalSettings.logo_url) {
+        setLogoPreview(globalSettings.logo_url);
+      }
+    }
+  }, [globalLoading, globalSettings]);
+
+  // Removed color presets - using fixed professional theme
+
+  const handleInputChange = (field, value) => {
+    setSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleLogoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogoPreview(e.target.result);
+        setSettings(prev => ({
+          ...prev,
+          logo: file
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Removed color preset functionality - using fixed professional theme
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const dataToSave = {
+        site_name: settings.siteName,
+        site_description: settings.siteDescription,
+        items_per_page: settings.itemsPerPage
+        // dark_mode, auto_save, show_animations hidden for now
+      };
+      
+      if (settings.logo) {
+        dataToSave.logo = settings.logo;
+      }
+      
+      await updateSettings(dataToSave);
+      
+      setSuccess('Settings saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        const errorMessages = Object.values(errors).flat().join(', ');
+        setError(errorMessages);
+      } else {
+        setError('Failed to save settings. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetToDefaults = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      await resetSettings();
+      
+      // Settings are automatically refreshed by the context
+      
+      setSuccess('Settings reset to defaults successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error resetting settings:', err);
+      setError('Failed to reset settings. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (globalLoading) {
+    return (
+      <MainCard title="Dashboard Settings">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress />
+        </Box>
+      </MainCard>
+    );
+  }
+
+  return (
+    <MainCard
+      title="Dashboard Settings"
+      secondary={
+        <Button
+          variant="contained"
+          startIcon={<IconDeviceFloppy />}
+          onClick={handleSave}
+          disabled={loading}
+        >
+          {loading ? 'Saving...' : 'Save Settings'}
+        </Button>
+      }
+    >
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+      
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
+
+      <Grid container spacing={3}>
+        {/* General Settings */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconSettings size={20} />
+                General Settings
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              
+              <Stack spacing={3}>
+                <TextField
+                  fullWidth
+                  label="Site Name"
+                  value={settings.siteName}
+                  onChange={(e) => handleInputChange('siteName', e.target.value)}
+                />
+                
+                <TextField
+                  fullWidth
+                  label="Site Description"
+                  multiline
+                  rows={3}
+                  value={settings.siteDescription}
+                  onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                />
+                
+                <FormControl fullWidth>
+                  <InputLabel>Items Per Page</InputLabel>
+                  <Select
+                    value={settings.itemsPerPage}
+                    onChange={(e) => handleInputChange('itemsPerPage', e.target.value)}
+                    label="Items Per Page"
+                  >
+                    <MenuItem value={10}>10</MenuItem>
+                    <MenuItem value={15}>15</MenuItem>
+                    <MenuItem value={20}>20</MenuItem>
+                    <MenuItem value={25}>25</MenuItem>
+                    <MenuItem value={50}>50</MenuItem>
+                  </Select>
+                </FormControl>
+                
+{/* Dark Mode, Auto Save, and Animations settings hidden for future use
+                <Stack direction="row" spacing={2}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.darkMode}
+                        onChange={(e) => handleInputChange('darkMode', e.target.checked)}
+                      />
+                    }
+                    label="Dark Mode"
+                  />
+                  
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.autoSave}
+                        onChange={(e) => handleInputChange('autoSave', e.target.checked)}
+                      />
+                    }
+                    label="Auto Save"
+                  />
+                  
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.showAnimations}
+                        onChange={(e) => handleInputChange('showAnimations', e.target.checked)}
+                      />
+                    }
+                    label="Animations"
+                  />
+                </Stack>
+                */}
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Logo Settings */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconPhoto size={20} />
+                Logo & Branding
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              
+              <Stack spacing={3} alignItems="center">
+                <Box sx={{ textAlign: 'center' }}>
+                  <Avatar
+                    src={logoPreview}
+                    sx={{ 
+                      width: 120, 
+                      height: 120, 
+                      mb: 2,
+                      border: '3px dashed',
+                      borderColor: 'primary.main',
+                      backgroundColor: 'primary.light'
+                    }}
+                  >
+                    <IconPhoto size={40} />
+                  </Avatar>
+                  
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="logo-upload"
+                    type="file"
+                    onChange={handleLogoUpload}
+                  />
+                  <label htmlFor="logo-upload">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      startIcon={<IconUpload />}
+                      fullWidth
+                    >
+                      Upload Logo
+                    </Button>
+                  </label>
+                  
+                  <Typography variant="caption" color="textSecondary" display="block" mt={1}>
+                    Recommended: 200x200px, PNG or JPG
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Color Settings */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconPalette size={20} />
+                Color Theme
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              
+              {/* Color Presets */}
+              <Typography variant="subtitle2" gutterBottom>
+                Quick Presets
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
+                {colorPresets.map((preset, index) => (
+                  <Chip
+                    key={index}
+                    label={preset.name}
+                    onClick={() => applyColorPreset(preset)}
+                    sx={{
+                      backgroundColor: preset.primary,
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: preset.secondary
+                      }
+                    }}
+                  />
+                ))}
+              </Stack>
+              
+              {/* Custom Colors */}
+              <Typography variant="subtitle2" gutterBottom>
+                Custom Colors
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Primary Color"
+                    type="color"
+                    value={settings.primaryColor}
+                    onChange={(e) => handleInputChange('primaryColor', e.target.value)}
+                    InputProps={{
+                      sx: { height: 56 }
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Secondary Color"
+                    type="color"
+                    value={settings.secondaryColor}
+                    onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
+                    InputProps={{
+                      sx: { height: 56 }
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Success Color"
+                    type="color"
+                    value={settings.successColor}
+                    onChange={(e) => handleInputChange('successColor', e.target.value)}
+                    InputProps={{
+                      sx: { height: 56 }
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Error Color"
+                    type="color"
+                    value={settings.errorColor}
+                    onChange={(e) => handleInputChange('errorColor', e.target.value)}
+                    InputProps={{
+                      sx: { height: 56 }
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Warning Color"
+                    type="color"
+                    value={settings.warningColor}
+                    onChange={(e) => handleInputChange('warningColor', e.target.value)}
+                    InputProps={{
+                      sx: { height: 56 }
+                    }}
+                  />
+                </Grid>
+              </Grid>
+              
+              {/* Color Preview */}
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Preview
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button 
+                    variant="contained" 
+                    sx={{ backgroundColor: settings.primaryColor }}
+                  >
+                    Primary
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    sx={{ backgroundColor: settings.secondaryColor }}
+                  >
+                    Secondary
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    sx={{ backgroundColor: settings.successColor }}
+                  >
+                    Success
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    sx={{ backgroundColor: settings.errorColor }}
+                  >
+                    Error
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    sx={{ backgroundColor: settings.warningColor }}
+                  >
+                    Warning
+                  </Button>
+                </Stack>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Action Buttons */}
+        <Grid item xs={12}>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Button
+              variant="outlined"
+              startIcon={<IconRefresh />}
+              onClick={resetToDefaults}
+              color="secondary"
+            >
+              Reset to Defaults
+            </Button>
+            
+            <Button
+              variant="contained"
+              startIcon={<IconDeviceFloppy />}
+              onClick={handleSave}
+              disabled={loading}
+              size="large"
+            >
+              {loading ? 'Saving...' : 'Save All Settings'}
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
+    </MainCard>
+  );
+};
+
+export default Settings;
