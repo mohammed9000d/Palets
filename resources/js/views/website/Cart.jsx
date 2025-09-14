@@ -135,9 +135,16 @@ const Cart = () => {
                 {/* Cart Header */}
                 <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      {cartSummary.itemsCount} item{cartSummary.itemsCount !== 1 ? 's' : ''}
-                    </Typography>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {cartSummary.itemsCount} item{cartSummary.itemsCount !== 1 ? 's' : ''}
+                      </Typography>
+                      {cartSummary.unavailable_items_count > 0 && (
+                        <Typography variant="caption" color="error.main" sx={{ fontWeight: 600 }}>
+                          {cartSummary.unavailable_items_count} unavailable item{cartSummary.unavailable_items_count !== 1 ? 's' : ''}
+                        </Typography>
+                      )}
+                    </Box>
                     <Button
                       onClick={handleClearCart}
                       color="error"
@@ -173,7 +180,14 @@ const Cart = () => {
 
                         {/* Product Details */}
                         <Grid item xs={12} sm={5}>
-                          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                          <Typography 
+                            variant="h6" 
+                            sx={{ 
+                              fontWeight: 600, 
+                              mb: 1,
+                              color: item.available !== false ? 'text.primary' : 'text.disabled'
+                            }}
+                          >
                             {item.product_title}
                           </Typography>
                           {item.artist && (
@@ -181,12 +195,19 @@ const Cart = () => {
                               by {item.artist}
                             </Typography>
                           )}
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              fontWeight: 600, 
+                              color: item.available !== false ? theme.palette.primary.main : theme.palette.text.disabled,
+                              textDecoration: item.available !== false ? 'none' : 'line-through'
+                            }}
+                          >
                             {formatPrice(item.price)} each
                           </Typography>
-                          {!item.available && (
-                            <Alert severity="warning" sx={{ mt: 1 }}>
-                              This item is no longer available
+                          {item.available === false && (
+                            <Alert severity="error" sx={{ mt: 1 }}>
+                              {item.unavailable_reason || 'This item is no longer available'}
                             </Alert>
                           )}
                         </Grid>
@@ -197,10 +218,11 @@ const Cart = () => {
                             <IconButton
                               size="small"
                               onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                              disabled={item.quantity <= 1}
+                              disabled={item.quantity <= 1 || item.available === false}
                               sx={{
                                 border: `1px solid ${theme.palette.divider}`,
-                                borderRadius: 1
+                                borderRadius: 1,
+                                opacity: item.available === false ? 0.5 : 1
                               }}
                             >
                               <IconMinus size={16} />
@@ -210,7 +232,8 @@ const Cart = () => {
                                 mx: 2,
                                 minWidth: 40,
                                 textAlign: 'center',
-                                fontWeight: 600
+                                fontWeight: 600,
+                                color: item.available !== false ? 'text.primary' : 'text.disabled'
                               }}
                             >
                               {item.quantity}
@@ -218,10 +241,11 @@ const Cart = () => {
                             <IconButton
                               size="small"
                               onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                              disabled={item.quantity >= 10}
+                              disabled={item.quantity >= 10 || item.available === false}
                               sx={{
                                 border: `1px solid ${theme.palette.divider}`,
-                                borderRadius: 1
+                                borderRadius: 1,
+                                opacity: item.available === false ? 0.5 : 1
                               }}
                             >
                               <IconPlus size={16} />
@@ -232,7 +256,15 @@ const Cart = () => {
                         {/* Price & Remove */}
                         <Grid item xs={12} sm={2}>
                           <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.primary.main, mb: 1 }}>
+                            <Typography 
+                              variant="h6" 
+                              sx={{ 
+                                fontWeight: 700, 
+                                color: item.available !== false ? theme.palette.primary.main : theme.palette.text.disabled,
+                                textDecoration: item.available !== false ? 'none' : 'line-through',
+                                mb: 1 
+                              }}
+                            >
                               {formatPrice((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0))}
                             </Typography>
                             <IconButton
@@ -268,25 +300,9 @@ const Cart = () => {
                     </Typography>
                   </Box>
                   
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography>Tax</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {formatPrice(cartSummary.tax)}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography>Shipping</Typography>
-                    <Typography sx={{ fontWeight: 600, color: cartSummary.shipping === 0 ? 'success.main' : 'inherit' }}>
-                      {cartSummary.shipping === 0 ? 'FREE' : formatPrice(cartSummary.shipping)}
-                    </Typography>
-                  </Box>
-                  
-                  {cartSummary.subtotal < 50 && (
-                    <Alert severity="info" sx={{ mt: 1 }}>
-                      Add {formatPrice(50 - cartSummary.subtotal)} more for free shipping!
-                    </Alert>
-                  )}
+                  <Alert severity="info" sx={{ mt: 1 }}>
+                    Shipping will be paid directly to the delivery person
+                  </Alert>
                 </Stack>
 
                 <Divider sx={{ my: 2 }} />

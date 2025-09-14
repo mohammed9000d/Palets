@@ -16,6 +16,11 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::with(['media', 'artist']);
+        
+        // For public API, only show published products
+        if ($request->is('api/public/*')) {
+            $query->where('status', 'published');
+        }
 
         // Search functionality
         if ($request->has('search') && $request->search) {
@@ -142,8 +147,15 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $product)
+    public function show(Product $product, Request $request)
     {
+        // For public API, only allow published products
+        if ($request->is('api/public/*') && $product->status !== 'published') {
+            return response()->json([
+                'message' => 'Product not found'
+            ], 404);
+        }
+        
         $product->load(['media', 'artist']);
         
         // Increment view count
@@ -315,6 +327,10 @@ class ProductController extends Controller
                 'id' => $product->artist->id,
                 'artist_name' => $product->artist->artist_name,
                 'slug' => $product->artist->slug,
+                'avatar_url' => $product->artist->avatar_url,
+                'avatar_thumb_url' => $product->artist->avatar_thumb_url,
+                'bio' => $product->artist->bio,
+                'specialties' => $product->artist->specialties,
             ] : null,
             'main_title' => $product->main_title,
             'sub_title' => $product->sub_title,

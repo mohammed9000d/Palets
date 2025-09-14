@@ -207,7 +207,12 @@ class Product extends Model implements HasMedia
         return $query->where('main_title', 'LIKE', "%{$term}%")
                     ->orWhere('sub_title', 'LIKE', "%{$term}%")
                     ->orWhere('description', 'LIKE', "%{$term}%")
-                    ->orWhere('product_details', 'LIKE', "%{$term}%");
+                    ->orWhere('product_details', 'LIKE', "%{$term}%")
+                    ->orWhereHas('artist', function ($artistQuery) use ($term) {
+                        $artistQuery->where('artist_name', 'LIKE', "%{$term}%")
+                                   ->orWhere('bio', 'LIKE', "%{$term}%")
+                                   ->orWhere('specialties', 'LIKE', "%{$term}%");
+                    });
     }
 
     /**

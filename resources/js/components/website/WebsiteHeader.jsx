@@ -238,7 +238,9 @@ const WebsiteHeader = () => {
             )}
 
             {/* Cart Icon */}
-            <CartIcon />
+            <Box sx={{ mr: '10px' }}>
+              <CartIcon />
+            </Box>
 
             {/* Authentication Section */}
             {isAuthenticated ? (

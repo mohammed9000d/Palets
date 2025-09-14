@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -25,21 +25,9 @@ import {
 import {
   IconArrowLeft,
   IconPalette,
-  IconShoppingCart,
-  IconHeart,
   IconShare,
   IconUser,
-  IconTag,
-  IconCurrencyDollar,
-  IconPackage,
-  IconTruck,
-  IconShield,
-  IconRefresh,
-  IconStar,
-  IconMinus,
-  IconPlus,
   IconZoomIn,
-  IconCheck,
   IconX,
   IconInfoCircle
 } from '@tabler/icons-react';
@@ -54,21 +42,23 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [imageZoomed, setImageZoomed] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const currentSlugRef = useRef(null);
 
-  useEffect(() => {
-    if (slug) {
-      loadProduct();
+  const loadProduct = useCallback(async (productSlug) => {
+    // Prevent duplicate calls for the same slug
+    if (currentSlugRef.current === productSlug) {
+      console.log('Skipping duplicate call for:', productSlug);
+      return;
     }
-  }, [slug]);
 
-  const loadProduct = async () => {
+    currentSlugRef.current = productSlug;
+
     try {
       setLoading(true);
-      const response = await publicProductsAPI.getBySlug(slug);
+      console.log('Loading product:', productSlug); // Debug log
+      const response = await publicProductsAPI.getBySlug(productSlug);
       
       if (response.data) {
         // Handle both direct product data and wrapped product data
@@ -83,7 +73,20 @@ const ProductDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (slug) {
+      loadProduct(slug);
+    }
+    
+    // Cleanup function to reset the ref when slug changes
+    return () => {
+      if (currentSlugRef.current !== slug) {
+        currentSlugRef.current = null;
+      }
+    };
+  }, [slug, loadProduct]);
 
   const handleShare = () => {
     if (navigator.share) {
@@ -265,23 +268,40 @@ const ProductDetail = () => {
                     ].filter(Boolean);
                     
                     return images.length > 1 && (
-                      <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 1 }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        gap: 1, 
+                        overflowX: 'auto', 
+                        pb: 1,
+                        '&::-webkit-scrollbar': {
+                          height: 4
+                        },
+                        '&::-webkit-scrollbar-track': {
+                          backgroundColor: alpha(theme.palette.divider, 0.2)
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                          backgroundColor: alpha(theme.palette.primary.main, 0.4),
+                          borderRadius: 2
+                        }
+                      }}>
                         {images.map((image, index) => (
                           <Card
                             key={index}
                             onClick={() => setSelectedImage(index)}
                             sx={{
-                              minWidth: 80,
-                              height: 80,
+                              width: 90,
+                              height: 90,
+                              minWidth: 90,
                               cursor: 'pointer',
                               border: selectedImage === index 
-                                ? `2px solid ${theme.palette.primary.main}` 
-                                : `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                                ? `3px solid ${theme.palette.primary.main}` 
+                                : `1px solid ${alpha(theme.palette.divider, 0.3)}`,
                               borderRadius: 2,
                               overflow: 'hidden',
                               transition: 'all 0.2s ease',
                               '&:hover': {
-                                border: `2px solid ${theme.palette.primary.light}`
+                                border: `3px solid ${theme.palette.primary.light}`,
+                                transform: 'translateY(-2px)'
                               }
                             }}
                           >
@@ -353,38 +373,55 @@ const ProductDetail = () => {
                   {product.price && (
                     <Box sx={{ mb: 4 }}>
                       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 1 }}>
-                                                 <Typography
-                           variant="h3"
-                           sx={{
-                             fontWeight: 700,
-                             color: theme.palette.primary.main,
-                             fontSize: { xs: '2rem', md: '2.5rem' }
-                           }}
-                         >
-                           ${product.price}
-                         </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            textDecoration: 'line-through',
-                            color: theme.palette.text.disabled,
-                            fontWeight: 400
-                          }}
-                        >
-                          ${(parseFloat(product.price) * 1.2).toFixed(2)}
-                        </Typography>
-                        <Chip
-                          label="20% OFF"
-                          size="small"
-                          sx={{
-                            bgcolor: theme.palette.success.main,
-                            color: 'white',
-                            fontWeight: 600
-                          }}
-                        />
+                        {/* Sale Price (if available) */}
+                        {product.discount_price && parseFloat(product.discount_price) > 0 ? (
+                          <>
+                            <Typography
+                              variant="h3"
+                              sx={{
+                                fontWeight: 700,
+                                color: theme.palette.error.main,
+                                fontSize: { xs: '2rem', md: '2.5rem' }
+                              }}
+                            >
+                              ${parseFloat(product.discount_price).toFixed(2)}
+                            </Typography>
+                            <Typography
+                              variant="h5"
+                              sx={{
+                                textDecoration: 'line-through',
+                                color: theme.palette.text.disabled,
+                                fontWeight: 400
+                              }}
+                            >
+                              ${parseFloat(product.price).toFixed(2)}
+                            </Typography>
+                            <Chip
+                              label={`${Math.round(((parseFloat(product.price) - parseFloat(product.discount_price)) / parseFloat(product.price)) * 100)}% OFF`}
+                              size="small"
+                              sx={{
+                                bgcolor: theme.palette.success.main,
+                                color: 'white',
+                                fontWeight: 600
+                              }}
+                            />
+                          </>
+                        ) : (
+                          /* Regular Price */
+                          <Typography
+                            variant="h3"
+                            sx={{
+                              fontWeight: 700,
+                              color: theme.palette.primary.main,
+                              fontSize: { xs: '2rem', md: '2.5rem' }
+                            }}
+                          >
+                            ${parseFloat(product.price).toFixed(2)}
+                          </Typography>
+                        )}
                       </Box>
                       <Typography variant="body2" color="text.secondary">
-                        Free shipping on orders over $50 • Limited time offer
+                        Price includes all applicable taxes
                       </Typography>
                     </Box>
                   )}
@@ -418,53 +455,6 @@ const ProductDetail = () => {
                     )}
                   </Box>
 
-                  {/* Quantity Selector */}
-                  {product.in_stock && (
-                    <Box sx={{ mb: 4 }}>
-                      <Typography variant="body1" sx={{ mb: 2, fontWeight: 600 }}>
-                        Quantity:
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          border: `1px solid ${theme.palette.divider}`,
-                          borderRadius: 2,
-                          overflow: 'hidden'
-                        }}>
-                          <IconButton
-                            size="small"
-                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                            disabled={quantity <= 1}
-                            sx={{ borderRadius: 0, px: 2 }}
-                          >
-                            <IconMinus size={16} />
-                          </IconButton>
-                          <Typography sx={{ 
-                            px: 3, 
-                            py: 1, 
-                            minWidth: 60, 
-                            textAlign: 'center',
-                            borderLeft: `1px solid ${theme.palette.divider}`,
-                            borderRight: `1px solid ${theme.palette.divider}`,
-                            fontWeight: 600
-                          }}>
-                            {quantity}
-                          </Typography>
-                          <IconButton
-                            size="small"
-                            onClick={() => setQuantity(quantity + 1)}
-                            sx={{ borderRadius: 0, px: 2 }}
-                          >
-                            <IconPlus size={16} />
-                          </IconButton>
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Only 5 left in stock
-                        </Typography>
-                      </Box>
-                    </Box>
-                  )}
 
                   {/* Add to Cart Button */}
                   <Box sx={{ mb: 4 }}>
@@ -476,126 +466,39 @@ const ProductDetail = () => {
                     />
                   </Box>
 
-                  {/* Secondary Action Buttons */}
-                  <Stack spacing={2} sx={{ mb: 4 }}>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <Button
-                        variant="outlined"
-                        size="large"
-                        startIcon={<IconHeart size={20} color={isWishlisted ? theme.palette.secondary.main : 'inherit'} />}
-                        onClick={() => setIsWishlisted(!isWishlisted)}
-                        sx={{
-                          flex: 1,
-                          py: 2,
-                          fontSize: '1rem',
-                          fontWeight: 600,
-                          borderRadius: 3,
-                          textTransform: 'none',
-                                                     borderColor: isWishlisted ? theme.palette.secondary.main : theme.palette.divider,
-                           color: isWishlisted ? theme.palette.secondary.main : theme.palette.text.primary,
-                           '&:hover': {
-                             borderColor: theme.palette.secondary.main,
-                             color: theme.palette.secondary.main,
-                             bgcolor: alpha(theme.palette.secondary.main, 0.05)
-                           }
-                        }}
-                      >
-                        {isWishlisted ? 'Saved' : 'Save'}
-                      </Button>
-                      
-                      <Button
-                        variant="outlined"
-                        size="large"
-                        disabled={!product.in_stock}
-                        sx={{
-                          flex: 1,
-                          py: 2,
-                          fontSize: '1rem',
-                          fontWeight: 600,
-                          borderRadius: 3,
-                          textTransform: 'none',
-                          borderColor: theme.palette.primary.main,
-                          color: theme.palette.primary.main,
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.05)
-                          }
-                        }}
-                      >
-                        Buy Now
-                      </Button>
-                    </Box>
-                  </Stack>
+                  {/* Buy Now Button */}
+                  <Box sx={{ mb: 4 }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      fullWidth
+                      disabled={!product.in_stock}
+                      sx={{
+                        py: 2,
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        borderRadius: 3,
+                        textTransform: 'none',
+                        background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
+                        color: 'white',
+                        boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.3)}`,
+                        '&:hover': {
+                          background: `linear-gradient(135deg, ${theme.palette.success.dark} 0%, ${theme.palette.success.main} 100%)`,
+                          boxShadow: `0 6px 16px ${alpha(theme.palette.success.main, 0.4)}`,
+                          transform: 'translateY(-1px)'
+                        },
+                        '&:disabled': {
+                          background: theme.palette.grey[300],
+                          color: theme.palette.grey[500],
+                          boxShadow: 'none',
+                          transform: 'none'
+                        }
+                      }}
+                    >
+                      Buy Now
+                    </Button>
+                  </Box>
 
-                                     {/* Delivery & Trust Info */}
-                   <Paper sx={{ p: 3, mb: 4, borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.05), border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}` }}>
-                     <Stack spacing={2.5}>
-                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                         <Box sx={{ 
-                           p: 1, 
-                           borderRadius: '50%', 
-                           bgcolor: alpha(theme.palette.primary.main, 0.1),
-                           display: 'flex',
-                           alignItems: 'center',
-                           justifyContent: 'center'
-                         }}>
-                           <IconTruck size={20} color={theme.palette.primary.main} />
-                         </Box>
-                         <Box>
-                           <Typography variant="body2" fontWeight={600} sx={{ color: theme.palette.primary.main }}>
-                             Free Express Delivery
-                           </Typography>
-                           <Typography variant="body2" color="text.secondary">
-                             2-3 business days • Order by 2 PM
-                           </Typography>
-                         </Box>
-                         <IconCheck size={16} color={theme.palette.primary.main} />
-                       </Box>
-                       
-                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                         <Box sx={{ 
-                           p: 1, 
-                           borderRadius: '50%', 
-                           bgcolor: alpha(theme.palette.primary.main, 0.1),
-                           display: 'flex',
-                           alignItems: 'center',
-                           justifyContent: 'center'
-                         }}>
-                           <IconRefresh size={20} color={theme.palette.primary.main} />
-                         </Box>
-                         <Box>
-                           <Typography variant="body2" fontWeight={600} sx={{ color: theme.palette.primary.main }}>
-                             Easy Returns
-                           </Typography>
-                           <Typography variant="body2" color="text.secondary">
-                             30-day return policy • Free return shipping
-                           </Typography>
-                         </Box>
-                         <IconCheck size={16} color={theme.palette.primary.main} />
-                       </Box>
-                       
-                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                         <Box sx={{ 
-                           p: 1, 
-                           borderRadius: '50%', 
-                           bgcolor: alpha(theme.palette.primary.main, 0.1),
-                           display: 'flex',
-                           alignItems: 'center',
-                           justifyContent: 'center'
-                         }}>
-                           <IconShield size={20} color={theme.palette.primary.main} />
-                         </Box>
-                         <Box>
-                           <Typography variant="body2" fontWeight={600} sx={{ color: theme.palette.primary.main }}>
-                             Secure Payment
-                           </Typography>
-                           <Typography variant="body2" color="text.secondary">
-                             SSL encrypted • Multiple payment options
-                           </Typography>
-                         </Box>
-                         <IconCheck size={16} color={theme.palette.primary.main} />
-                       </Box>
-                     </Stack>
-                   </Paper>
 
                   {/* Artist Info */}
                   {product.artist && (
@@ -604,12 +507,12 @@ const ProductDetail = () => {
                         Artist
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                 <Avatar
-                           src={product.artist.avatar_url || product.artist.avatar_thumb_url}
-                           sx={{ width: 48, height: 48 }}
-                         >
-                           <IconUser size={24} />
-                         </Avatar>
+                        <Avatar
+                          src={product.artist.avatar_url || product.artist.avatar_thumb_url || product.artist.avatar}
+                          sx={{ width: 48, height: 48 }}
+                        >
+                          <IconUser size={24} />
+                        </Avatar>
                         <Box sx={{ flexGrow: 1 }}>
                           <Typography
                             component={Link}

@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ArtistWork;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -26,10 +27,10 @@ class CartController extends Controller
                     'items' => [],
                     'summary' => [
                         'items_count' => 0,
+                        'unavailable_items_count' => 0,
                         'subtotal' => 0,
-                        'tax' => 0,
-                        'shipping' => 9.99,
-                        'total' => 9.99
+                        'shipping' => 0,
+                        'total' => 0
                     ]
                 ]);
             }
@@ -38,6 +39,11 @@ class CartController extends Controller
 
             $items = $cart->items->map(function ($item) {
                 $productDetails = $item->product_details;
+                
+                // Check if product is still available
+                $product = $this->findProduct($item->product_id, $item->product_type);
+                $isAvailable = $product && $this->isProductAvailable($product, $item->product_type);
+                
                 return [
                     'id' => $item->id,
                     'product_id' => $item->product_id,
@@ -45,11 +51,12 @@ class CartController extends Controller
                     'product_slug' => $productDetails['slug'],
                     'quantity' => $item->quantity,
                     'price' => $item->price,
-                    'total' => $item->total,
+                    'total' => $isAvailable ? $item->total : 0, // Don't count unavailable items in total
                     'product_title' => $productDetails['title'],
                     'product_image' => $productDetails['image'],
                     'options' => $item->options,
-                    'available' => $productDetails['available'],
+                    'available' => $isAvailable,
+                    'unavailable_reason' => !$isAvailable ? $this->getUnavailableReason($product, $item->product_type) : null,
                     'artist' => $productDetails['artist'] ?? null,
                     'added_at' => $item->created_at->toISOString()
                 ];
@@ -59,11 +66,11 @@ class CartController extends Controller
                 'success' => true,
                 'items' => $items,
                 'summary' => [
-                    'items_count' => $cart->items_count,
-                    'subtotal' => $cart->subtotal,
-                    'tax' => $cart->tax,
-                    'shipping' => $cart->shipping,
-                    'total' => $cart->total
+                    'items_count' => $items->where('available', true)->sum('quantity'),
+                    'unavailable_items_count' => $items->where('available', false)->sum('quantity'),
+                    'subtotal' => $items->where('available', true)->sum('total'),
+                    'shipping' => 0, // Shipping paid to delivery guy
+                    'total' => $items->where('available', true)->sum('total') // No tax, no shipping charge
                 ]
             ]);
 
@@ -264,10 +271,10 @@ class CartController extends Controller
                 'items' => [],
                 'summary' => [
                     'items_count' => 0,
+                    'unavailable_items_count' => 0,
                     'subtotal' => 0,
-                    'tax' => 0,
-                    'shipping' => 9.99,
-                    'total' => 9.99
+                    'shipping' => 0,
+                    'total' => 0
                 ]
             ]);
 
@@ -308,14 +315,165 @@ class CartController extends Controller
     }
 
     /**
-     * Check if product is available
+     * Check if product is available for cart operations
      */
     private function isProductAvailable($product, $productType)
     {
         if ($productType === 'artwork') {
-            return $product->is_for_sale && $product->status === 'published';
+            return $product && $product->is_for_sale && $product->status === 'published';
         } else {
-            return $product->in_stock && $product->status === 'published';
+            return $product && $product->in_stock && $product->status === 'published';
+        }
+    }
+
+    /**
+     * Merge guest cart with user cart when user logs in
+     */
+    public function mergeCart(Request $request)
+    {
+        // Log the incoming request for debugging
+        Log::info('Cart merge request received', [
+            'user_id' => Auth::guard('web')->id(),
+            'guest_cart' => $request->guest_cart
+        ]);
+
+        $request->validate([
+            'guest_cart' => 'required|array',
+            'guest_cart.*.product_id' => 'required|integer',
+            'guest_cart.*.product_type' => 'required|in:product,artwork',
+            'guest_cart.*.quantity' => 'required|integer|min:1|max:10',
+            'guest_cart.*.options' => 'nullable|array'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Must be authenticated to merge cart
+            if (!Auth::guard('web')->check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required'
+                ], 401);
+            }
+
+            $user = Auth::guard('web')->user();
+            $cart = Cart::findOrCreateCart($user->id);
+            
+            $mergedCount = 0;
+            $skippedCount = 0;
+
+            foreach ($request->guest_cart as $index => $guestItem) {
+                Log::info("Processing guest cart item {$index}", [
+                    'item' => $guestItem,
+                    'product_id' => $guestItem['product_id'] ?? 'missing',
+                    'product_type' => $guestItem['product_type'] ?? 'missing',
+                    'quantity' => $guestItem['quantity'] ?? 'missing'
+                ]);
+
+                // Find the product
+                $product = $this->findProduct($guestItem['product_id'], $guestItem['product_type']);
+                
+                if (!$product) {
+                    Log::warning("Product not found for guest cart item {$index}", [
+                        'product_id' => $guestItem['product_id'],
+                        'product_type' => $guestItem['product_type']
+                    ]);
+                    $skippedCount++;
+                    continue;
+                }
+
+                // Skip only if product doesn't exist at all
+                if (!$product) {
+                    Log::warning("Product not found for guest cart item {$index}", [
+                        'product_id' => $guestItem['product_id'],
+                        'product_type' => $guestItem['product_type']
+                    ]);
+                    $skippedCount++;
+                    continue;
+                }
+                
+                // Log product info for debugging
+                $isAvailable = $this->isProductAvailable($product, $guestItem['product_type']);
+                Log::info("Product found for guest cart item {$index}", [
+                    'product_id' => $guestItem['product_id'],
+                    'product_title' => $product->main_title ?? $product->title ?? 'unknown',
+                    'in_stock' => $product->in_stock ?? 'unknown',
+                    'status' => $product->status ?? 'unknown',
+                    'is_available' => $isAvailable
+                ]);
+
+                // Check if item already exists in user's cart
+                $existingItem = $cart->items()->where([
+                    'product_id' => $guestItem['product_id'],
+                    'product_type' => $guestItem['product_type'],
+                    'options' => json_encode($guestItem['options'] ?? [])
+                ])->first();
+
+                if ($existingItem) {
+                    // Update quantity
+                    Log::info("Updating existing cart item {$index}", [
+                        'existing_quantity' => $existingItem->quantity,
+                        'adding_quantity' => $guestItem['quantity'],
+                        'new_quantity' => $existingItem->quantity + $guestItem['quantity']
+                    ]);
+                    
+                    $existingItem->update([
+                        'quantity' => $existingItem->quantity + $guestItem['quantity']
+                    ]);
+                } else {
+                    // Create new cart item
+                    Log::info("Creating new cart item {$index}", [
+                        'product_id' => $guestItem['product_id'],
+                        'product_type' => $guestItem['product_type'],
+                        'quantity' => $guestItem['quantity'],
+                        'price' => $this->getProductPrice($product, $guestItem['product_type'])
+                    ]);
+                    
+                    $cart->items()->create([
+                        'product_id' => $guestItem['product_id'],
+                        'product_type' => $guestItem['product_type'],
+                        'quantity' => $guestItem['quantity'],
+                        'price' => $this->getProductPrice($product, $guestItem['product_type']),
+                        'options' => $guestItem['options'] ?? []
+                    ]);
+                }
+                
+                $mergedCount++;
+            }
+
+            // Update cart activity
+            $cart->updateActivity();
+
+            DB::commit();
+
+            Log::info('Cart merge completed', [
+                'user_id' => $user->id,
+                'merged_items' => $mergedCount,
+                'skipped_items' => $skippedCount,
+                'total_guest_items' => count($request->guest_cart),
+                'success_rate' => count($request->guest_cart) > 0 ? ($mergedCount / count($request->guest_cart)) * 100 . '%' : '0%'
+            ]);
+
+            // Return updated cart
+            $response = $this->index($request);
+            $responseData = $response->getData(true);
+            
+            $responseData['merge_summary'] = [
+                'merged_items' => $mergedCount,
+                'skipped_items' => $skippedCount,
+                'total_guest_items' => count($request->guest_cart),
+                'message' => "Successfully merged {$mergedCount} of " . count($request->guest_cart) . " items from guest cart"
+            ];
+
+            return response()->json($responseData);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to merge cart',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -327,7 +485,19 @@ class CartController extends Controller
         if ($productType === 'artwork') {
             return $product->price;
         } else {
-            return $product->final_price; // This considers discount price
+            // Use discount_price if available, otherwise regular price
+            return ($product->discount_price && $product->discount_price > 0) 
+                ? $product->discount_price 
+                : $product->price;
         }
+    }
+
+    /**
+     * Get reason why product is unavailable
+     */
+    private function getUnavailableReason($product, $productType)
+    {
+        // Always return simple "Unavailable" message for users
+        return 'Unavailable';
     }
 }

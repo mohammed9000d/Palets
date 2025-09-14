@@ -515,15 +515,58 @@ const ArtistProfile = () => {
                                 position: 'absolute',
                                 bottom: 8,
                                 right: 8,
-                                bgcolor: alpha('#000', 0.7),
-                                color: 'white',
-                                px: 1.5,
-                                py: 0.5,
-                                borderRadius: 1,
-                                fontWeight: 600
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-end',
+                                gap: 0.5
                               }}
                             >
-                              ${product.price}
+                              {/* Sale Price (if available) */}
+                              {product.discount_price && parseFloat(product.discount_price) > 0 ? (
+                                <>
+                                  <Box
+                                    sx={{
+                                      bgcolor: alpha(theme.palette.error.main, 0.9),
+                                      color: 'white',
+                                      px: 1.5,
+                                      py: 0.5,
+                                      borderRadius: 1,
+                                      fontWeight: 600,
+                                      fontSize: '0.9rem'
+                                    }}
+                                  >
+                                    ${parseFloat(product.discount_price).toFixed(2)}
+                                  </Box>
+                                  <Box
+                                    sx={{
+                                      bgcolor: alpha('#000', 0.6),
+                                      color: 'white',
+                                      px: 1,
+                                      py: 0.25,
+                                      borderRadius: 0.5,
+                                      fontSize: '0.75rem',
+                                      textDecoration: 'line-through',
+                                      opacity: 0.8
+                                    }}
+                                  >
+                                    ${parseFloat(product.price).toFixed(2)}
+                                  </Box>
+                                </>
+                              ) : (
+                                /* Regular Price */
+                                <Box
+                                  sx={{
+                                    bgcolor: alpha('#000', 0.7),
+                                    color: 'white',
+                                    px: 1.5,
+                                    py: 0.5,
+                                    borderRadius: 1,
+                                    fontWeight: 600
+                                  }}
+                                >
+                                  ${parseFloat(product.price).toFixed(2)}
+                                </Box>
+                              )}
                             </Box>
                           )}
                         </Box>

@@ -360,16 +360,59 @@ const Products = () => {
                             position: 'absolute',
                             bottom: 12,
                             right: 12,
-                            bgcolor: 'rgba(0,0,0,0.8)',
-                            color: 'white',
-                            px: 2,
-                            py: 0.5,
-                            borderRadius: 2,
-                            fontWeight: 700,
-                            fontSize: '1.1rem'
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-end',
+                            gap: 0.5
                           }}
                         >
-                          ${product.price}
+                          {/* Sale Price (if available) */}
+                          {product.discount_price && parseFloat(product.discount_price) > 0 ? (
+                            <>
+                              <Box
+                                sx={{
+                                  bgcolor: theme.palette.error.main,
+                                  color: 'white',
+                                  px: 2,
+                                  py: 0.5,
+                                  borderRadius: 2,
+                                  fontWeight: 700,
+                                  fontSize: '1.1rem'
+                                }}
+                              >
+                                ${parseFloat(product.discount_price).toFixed(2)}
+                              </Box>
+                              <Box
+                                sx={{
+                                  bgcolor: 'rgba(0,0,0,0.6)',
+                                  color: 'white',
+                                  px: 1.5,
+                                  py: 0.25,
+                                  borderRadius: 1,
+                                  fontSize: '0.85rem',
+                                  textDecoration: 'line-through',
+                                  opacity: 0.8
+                                }}
+                              >
+                                ${parseFloat(product.price).toFixed(2)}
+                              </Box>
+                            </>
+                          ) : (
+                            /* Regular Price */
+                            <Box
+                              sx={{
+                                bgcolor: 'rgba(0,0,0,0.8)',
+                                color: 'white',
+                                px: 2,
+                                py: 0.5,
+                                borderRadius: 2,
+                                fontWeight: 700,
+                                fontSize: '1.1rem'
+                              }}
+                            >
+                              ${parseFloat(product.price).toFixed(2)}
+                            </Box>
+                          )}
                         </Box>
                       )}
                     </Box>

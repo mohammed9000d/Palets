@@ -871,7 +871,7 @@ const Home = () => {
                         {/* Bottom Content - Price */}
                         <Box display="flex" alignItems="center" justifyContent="space-between">
                           <Box>
-                            {product.is_on_sale ? (
+                            {product.discount_price && parseFloat(product.discount_price) > 0 ? (
                               <Stack direction="row" spacing={1} alignItems="center">
                                 <Typography 
                                   variant="body2" 
@@ -881,7 +881,7 @@ const Home = () => {
                                     fontSize: '0.875rem'
                                   }}
                                 >
-                                  ${product.price}
+                                  ${parseFloat(product.price).toFixed(2)}
                                 </Typography>
                                 <Typography 
                                   variant="h6" 
@@ -890,7 +890,7 @@ const Home = () => {
                                     fontWeight: 700
                                   }}
                                 >
-                                  ${product.final_price}
+                                  ${parseFloat(product.discount_price).toFixed(2)}
                                 </Typography>
                               </Stack>
                             ) : (
@@ -901,7 +901,7 @@ const Home = () => {
                                   color: theme.palette.text.primary
                                 }}
                               >
-                                ${product.price}
+                                ${parseFloat(product.price).toFixed(2)}
                               </Typography>
                             )}
                           </Box>

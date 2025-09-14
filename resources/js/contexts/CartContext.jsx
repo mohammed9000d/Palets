@@ -17,6 +17,7 @@ export const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const [configReady, setConfigReady] = useState(false);
+  const [cartInitialized, setCartInitialized] = useState(false);
 
   // Initialize config service
   useEffect(() => {
@@ -44,16 +45,54 @@ export const CartProvider = ({ children }) => {
   // Load cart from localStorage on mount (for guests) or from API (for authenticated users)
   useEffect(() => {
     if (configReady) {
+      console.log('Loading cart - isAuthenticated:', isAuthenticated, 'configReady:', configReady);
       loadCart();
+    }
+  }, [isAuthenticated, user, configReady]);
+
+  // Automatically merge guest cart when user becomes authenticated
+  useEffect(() => {
+    console.log('Auth state changed - isAuthenticated:', isAuthenticated, 'user:', user, 'configReady:', configReady);
+    
+    if (isAuthenticated && user && configReady) {
+      // Check if there's a guest cart to merge
+      const guestCart = localStorage.getItem('guestCart');
+      console.log('Guest cart in localStorage:', guestCart);
+      
+      if (guestCart) {
+        try {
+          const parsedGuestCart = JSON.parse(guestCart);
+          console.log('Parsed guest cart:', parsedGuestCart);
+          
+          if (parsedGuestCart.length > 0) {
+            console.log('Starting guest cart merge...');
+            // Call merge directly instead of using the function from scope
+            setTimeout(() => mergeGuestCart(), 100); // Small delay to ensure auth is fully set
+          } else {
+            console.log('Guest cart is empty, skipping merge');
+          }
+        } catch (error) {
+          console.error('Error parsing guest cart for merge:', error);
+          localStorage.removeItem('guestCart');
+        }
+      } else {
+        console.log('No guest cart found in localStorage');
+      }
     }
   }, [isAuthenticated, user, configReady]);
 
   // Save cart to localStorage whenever it changes (for guests)
   useEffect(() => {
-    if (!isAuthenticated) {
-      localStorage.setItem('guestCart', JSON.stringify(cartItems));
+    // Only save to localStorage after cart has been initialized to prevent overwriting on load
+    if (!isAuthenticated && cartInitialized) {
+      try {
+        localStorage.setItem('guestCart', JSON.stringify(cartItems));
+        console.log('Saved guest cart to localStorage:', cartItems);
+      } catch (error) {
+        console.error('Failed to save cart to localStorage:', error);
+      }
     }
-  }, [cartItems, isAuthenticated]);
+  }, [cartItems, isAuthenticated, cartInitialized]);
 
   const loadCart = async () => {
     if (isAuthenticated) {
@@ -74,24 +113,41 @@ export const CartProvider = ({ children }) => {
       } catch (error) {
         console.error('Error loading cart:', error);
         // Fallback to localStorage
-        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-        setCartItems(guestCart);
+        try {
+          const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+          setCartItems(guestCart);
+        } catch (parseError) {
+          console.error('Error parsing guest cart:', parseError);
+          setCartItems([]);
+        }
       } finally {
         setLoading(false);
       }
     } else {
       // Load cart from localStorage for guests
-      const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-      setCartItems(guestCart);
+      try {
+        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+        console.log('Loading guest cart from localStorage:', guestCart);
+        setCartItems(guestCart);
+      } catch (error) {
+        console.error('Error loading guest cart:', error);
+        setCartItems([]);
+        localStorage.removeItem('guestCart'); // Clean up corrupted data
+      }
     }
+    
+    // Mark cart as initialized after loading
+    setCartInitialized(true);
   };
 
   const addToCart = async (product, quantity = 1, options = {}) => {
     try {
       setLoading(true);
 
-      // Create cart item object - use final_price which considers discounts
-      const productPrice = product.final_price || product.price || 0;
+      // Create cart item object - use discount_price if available, otherwise regular price
+      const productPrice = (product.discount_price && parseFloat(product.discount_price) > 0) 
+        ? product.discount_price 
+        : product.price || 0;
       
       const cartItem = {
         product_id: product.id,
@@ -280,9 +336,24 @@ export const CartProvider = ({ children }) => {
   const mergeGuestCart = async () => {
     const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
     
+    console.log('Attempting to merge guest cart:', guestCart);
+    console.log('Is authenticated:', isAuthenticated);
+    
     if (guestCart.length > 0 && isAuthenticated) {
       try {
         setLoading(true);
+        console.log('Sending merge request to:', getApiUrl('cart/merge'));
+        
+        // Transform guest cart to match backend expectations
+        const transformedGuestCart = guestCart.map(item => ({
+          product_id: item.product_id,
+          product_type: item.product_type || 'product',
+          quantity: item.quantity,
+          options: item.options || {}
+        }));
+
+        console.log('Transformed guest cart for backend:', transformedGuestCart);
+
         const response = await fetch(getApiUrl('cart/merge'), {
           method: 'POST',
           credentials: 'include',
@@ -290,39 +361,43 @@ export const CartProvider = ({ children }) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            guest_cart: guestCart
+            guest_cart: transformedGuestCart
           })
         });
 
+        console.log('Merge response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Merge successful, new cart:', data);
           setCartItems(data.items || []);
           localStorage.removeItem('guestCart');
+          console.log('Guest cart cleared from localStorage');
+        } else {
+          const errorData = await response.json();
+          console.error('Merge failed:', errorData);
         }
       } catch (error) {
         console.error('Error merging cart:', error);
       } finally {
         setLoading(false);
       }
+    } else {
+      console.log('No guest cart to merge or user not authenticated');
     }
   };
 
-  // Calculate cart totals
+  // Calculate cart totals - only count available items
   const cartSummary = {
-    itemsCount: cartItems.reduce((total, item) => total + (parseInt(item.quantity) || 0), 0),
-    subtotal: cartItems.reduce((total, item) => {
+    itemsCount: cartItems.filter(item => item.available !== false).reduce((total, item) => total + (parseInt(item.quantity) || 0), 0),
+    unavailable_items_count: cartItems.filter(item => item.available === false).reduce((total, item) => total + (parseInt(item.quantity) || 0), 0),
+    subtotal: cartItems.filter(item => item.available !== false).reduce((total, item) => {
       const price = parseFloat(item.price) || 0;
       const quantity = parseInt(item.quantity) || 0;
       return total + (price * quantity);
     }, 0),
-    get tax() {
-      return this.subtotal * 0.08; // 8% tax
-    },
-    get shipping() {
-      return this.subtotal > 50 ? 0 : 9.99; // Free shipping over $50
-    },
     get total() {
-      return this.subtotal + this.tax + this.shipping;
+      return this.subtotal; // No tax, no shipping charge - shipping paid to delivery guy
     }
   };
 

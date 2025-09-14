@@ -143,9 +143,23 @@ const CartIcon = () => {
             </IconButton>
           </Box>
           {cartSummary.itemsCount > 0 && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {cartSummary.itemsCount} item{cartSummary.itemsCount !== 1 ? 's' : ''}
-            </Typography>
+            <Box sx={{ mt: 0.5 }}>
+              <Typography variant="body2" color="text.secondary">
+                {cartSummary.itemsCount} item{cartSummary.itemsCount !== 1 ? 's' : ''}
+              </Typography>
+              {cartSummary.unavailable_items_count > 0 && (
+                <Typography 
+                  variant="caption" 
+                  color="error.main" 
+                  sx={{ 
+                    fontWeight: 600,
+                    display: 'block'
+                  }}
+                >
+                  {cartSummary.unavailable_items_count} unavailable
+                </Typography>
+              )}
+            </Box>
           )}
         </Box>
 
@@ -201,11 +215,24 @@ const CartIcon = () => {
                         fontWeight: 600,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        color: item.available ? 'text.primary' : 'text.disabled'
                       }}
                     >
                       {item.product_title}
                     </Typography>
+                    {!item.available && (
+                      <Typography 
+                        variant="caption" 
+                        color="error.main" 
+                        sx={{ 
+                          fontWeight: 600,
+                          display: 'block'
+                        }}
+                      >
+                        {item.unavailable_reason || 'Unavailable'}
+                      </Typography>
+                    )}
                     {item.artist && (
                       <Typography variant="caption" color="text.secondary">
                         by {item.artist}
@@ -215,7 +242,14 @@ const CartIcon = () => {
                       <Typography variant="body2" color="text.secondary">
                         Qty: {item.quantity}
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          color: item.available ? theme.palette.primary.main : theme.palette.text.disabled,
+                          textDecoration: item.available ? 'none' : 'line-through'
+                        }}
+                      >
                         {formatPrice((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0))}
                       </Typography>
                     </Box>

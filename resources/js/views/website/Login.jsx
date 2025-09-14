@@ -26,12 +26,14 @@ import {
   IconLogin
 } from '@tabler/icons-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
 
 const Login = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, loading: authLoading } = useAuth();
+  const { mergeGuestCart } = useCart();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -68,6 +70,23 @@ const Login = () => {
       const result = await login(formData.email, formData.password, formData.remember);
       
       if (result.success) {
+        console.log('Login successful, checking for guest cart to merge...');
+        
+        // Check if there's a guest cart to merge
+        const guestCart = localStorage.getItem('guestCart');
+        if (guestCart) {
+          try {
+            const parsedGuestCart = JSON.parse(guestCart);
+            if (parsedGuestCart.length > 0) {
+              console.log('Found guest cart, merging...', parsedGuestCart);
+              await mergeGuestCart();
+              console.log('Guest cart merge completed');
+            }
+          } catch (mergeError) {
+            console.error('Error during cart merge:', mergeError);
+          }
+        }
+        
         const from = location.state?.from?.pathname || '/';
         navigate(from, { replace: true });
       } else {
