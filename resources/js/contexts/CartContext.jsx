@@ -14,8 +14,8 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const [loading, setLoading] = useState(true); // Start with loading true to prevent flash
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [configReady, setConfigReady] = useState(false);
   const [cartInitialized, setCartInitialized] = useState(false);
 
@@ -44,11 +44,11 @@ export const CartProvider = ({ children }) => {
 
   // Load cart from localStorage on mount (for guests) or from API (for authenticated users)
   useEffect(() => {
-    if (configReady) {
-      console.log('Loading cart - isAuthenticated:', isAuthenticated, 'configReady:', configReady);
+    if (configReady && !authLoading) {
+      console.log('Loading cart - isAuthenticated:', isAuthenticated, 'configReady:', configReady, 'authLoading:', authLoading);
       loadCart();
     }
-  }, [isAuthenticated, user, configReady]);
+  }, [isAuthenticated, user, configReady, authLoading]);
 
   // Automatically merge guest cart when user becomes authenticated
   useEffect(() => {
@@ -133,6 +133,8 @@ export const CartProvider = ({ children }) => {
         console.error('Error loading guest cart:', error);
         setCartItems([]);
         localStorage.removeItem('guestCart'); // Clean up corrupted data
+      } finally {
+        setLoading(false); // Set loading false for guest cart
       }
     }
     
@@ -403,7 +405,7 @@ export const CartProvider = ({ children }) => {
 
   const value = {
     cartItems,
-    loading,
+    loading: loading || authLoading || !cartInitialized, // Keep loading until auth and cart are ready
     cartSummary,
     addToCart,
     updateQuantity,

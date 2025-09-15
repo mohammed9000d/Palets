@@ -170,7 +170,16 @@ const CartIcon = () => {
               <CircularProgress size={24} />
             </Box>
           ) : cartItems.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4, px: 3 }}>
+            <Box sx={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center', 
+              py: 4, 
+              px: 3,
+              minHeight: 150
+            }}>
               <IconShoppingCart size={48} color={theme.palette.text.disabled} />
               <Typography variant="body1" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
                 Your cart is empty

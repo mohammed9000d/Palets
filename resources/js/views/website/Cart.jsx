@@ -100,7 +100,17 @@ const Cart = () => {
 
       {cartItems.length === 0 ? (
         /* Empty Cart */
-        <Paper sx={{ textAlign: 'center', py: 8, px: 4, borderRadius: 3 }}>
+        <Paper sx={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center', 
+          py: 8, 
+          px: 4, 
+          borderRadius: 3,
+          minHeight: 400
+        }}>
           <IconShoppingBag size={80} color={theme.palette.text.disabled} />
           <Typography variant="h5" sx={{ mt: 3, mb: 2, fontWeight: 600 }}>
             Your cart is empty
