@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import jsconfigPaths from 'vite-jsconfig-paths';
 import path from 'path';
@@ -11,18 +10,13 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/index.jsx'],
             refresh: true,
         }),
-        react({
-            // Configure React plugin to avoid preamble issues
-            include: "**/*.{jsx,tsx}",
-            // Disable fast refresh to avoid preamble issues
-            fastRefresh: false,
-            babel: {
-                plugins: [],
-            },
-        }),
         tailwindcss(),
         jsconfigPaths(),
     ],
+    esbuild: {
+        jsx: 'automatic',
+        jsxImportSource: 'react',
+    },
     server: {
         hmr: {
             host: 'localhost',

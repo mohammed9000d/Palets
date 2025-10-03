@@ -42,25 +42,15 @@ const Register = () => {
     password: '',
     password_confirmation: '',
     phone: '',
-    country_code: '+1'
+    country_code: '+39'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const countryCodes = [
-    { value: '+1', label: '+1 (US/CA)' },
-    { value: '+44', label: '+44 (UK)' },
-    { value: '+33', label: '+33 (FR)' },
-    { value: '+49', label: '+49 (DE)' },
-    { value: '+39', label: '+39 (IT)' },
-    { value: '+34', label: '+34 (ES)' },
-    { value: '+81', label: '+81 (JP)' },
-    { value: '+86', label: '+86 (CN)' },
-    { value: '+91', label: '+91 (IN)' },
-    { value: '+61', label: '+61 (AU)' },
-  ];
+  // Static Italy country code
+  const ITALY_COUNTRY_CODE = '+39';
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -328,48 +318,7 @@ const Register = () => {
               </Grid>
 
               {/* Phone */}
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  select
-                  name="country_code"
-                  label="Country Code"
-                  value={formData.country_code}
-                  onChange={handleChange}
-                  variant="outlined"
-                  InputProps={{
-                    sx: {
-                      borderRadius: 2,
-                      backgroundColor: alpha('#ffffff', 0.9),
-                      '& .MuiOutlinedInput-root': {
-                        '&:hover fieldset': {
-                          borderColor: theme.palette.primary.main,
-                          borderWidth: 2
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: theme.palette.primary.main,
-                          borderWidth: 2
-                        }
-                      }
-                    }
-                  }}
-                  InputLabelProps={{
-                    sx: {
-                      color: theme.palette.text.secondary,
-                      '&.Mui-focused': {
-                        color: theme.palette.primary.main
-                      }
-                    }
-                  }}
-                >
-                  {countryCodes.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={8}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   name="phone"
@@ -377,10 +326,31 @@ const Register = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   variant="outlined"
+                  placeholder="e.g., 123 456 7890"
+                  helperText="Italian phone number without country code"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <IconPhone size={20} color={theme.palette.text.secondary} />
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 1,
+                          pr: 1,
+                          borderRight: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                          mr: 1
+                        }}>
+                          <IconPhone size={20} color={theme.palette.text.secondary} />
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              color: theme.palette.text.primary,
+                              fontWeight: 600,
+                              fontSize: '0.95rem'
+                            }}
+                          >
+                            {ITALY_COUNTRY_CODE}
+                          </Typography>
+                        </Box>
                       </InputAdornment>
                     ),
                     sx: {
@@ -404,6 +374,12 @@ const Register = () => {
                       '&.Mui-focused': {
                         color: theme.palette.primary.main
                       }
+                    }
+                  }}
+                  FormHelperTextProps={{
+                    sx: {
+                      color: theme.palette.text.secondary,
+                      fontSize: '0.75rem'
                     }
                   }}
                 />

@@ -81,6 +81,10 @@ export const AuthProvider = ({ children }) => {
       if (response.data.success) {
         setUser(response.data.user);
         setIsAuthenticated(true);
+        
+        // Fetch complete user profile data after successful login
+        await checkAuthStatus();
+        
         return { success: true, message: response.data.message };
       } else {
         return { success: false, message: response.data.message };
@@ -125,33 +129,62 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
-      const formData = new FormData();
+      // Check if we have a file upload (avatar)
+      const hasFileUpload = profileData.avatar && profileData.avatar instanceof File;
       
-      // Append all profile data to FormData
-      Object.keys(profileData).forEach(key => {
-        if (profileData[key] !== null && profileData[key] !== undefined) {
+      if (hasFileUpload) {
+        // Use FormData for file uploads
+        const formData = new FormData();
+        
+        Object.keys(profileData).forEach(key => {
           if (key === 'avatar' && profileData[key] instanceof File) {
             formData.append(key, profileData[key]);
           } else if (typeof profileData[key] === 'boolean') {
             formData.append(key, profileData[key] ? '1' : '0');
-          } else {
+          } else if (profileData[key] !== null && profileData[key] !== undefined) {
             formData.append(key, profileData[key]);
           }
-        }
-      });
+        });
 
-      const response = await axios.put(getApiUrl('auth/profile'), formData, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'multipart/form-data',
+        const response = await axios.post(getApiUrl('auth/profile'), formData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          }
+        });
+        
+        if (response.data.success) {
+          setUser(response.data.user);
+          return { success: true, message: response.data.message };
+        } else {
+          return { success: false, message: response.data.message };
         }
-      });
-
-      if (response.data.success) {
-        setUser(response.data.user);
-        return { success: true, message: response.data.message };
       } else {
-        return { success: false, message: response.data.message };
+        // Use JSON for regular updates (no file upload)
+        const jsonData = { ...profileData };
+        delete jsonData.avatar; // Remove avatar from JSON data
+        
+        // Convert boolean values to proper format
+        if (typeof jsonData.newsletter_subscription === 'boolean') {
+          jsonData.newsletter_subscription = jsonData.newsletter_subscription;
+        }
+        if (typeof jsonData.sms_notifications === 'boolean') {
+          jsonData.sms_notifications = jsonData.sms_notifications;
+        }
+
+        const response = await axios.put(getApiUrl('auth/profile'), jsonData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (response.data.success) {
+          setUser(response.data.user);
+          return { success: true, message: response.data.message };
+        } else {
+          return { success: false, message: response.data.message };
+        }
       }
     } catch (error) {
       const message = error.response?.data?.message || 'Profile update failed. Please try again.';

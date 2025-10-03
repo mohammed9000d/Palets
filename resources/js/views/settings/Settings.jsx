@@ -11,448 +11,404 @@ import {
   Divider,
   Avatar,
   IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Switch,
   FormControlLabel,
   Stack,
-  Chip
+  Paper,
+  Snackbar,
+  CircularProgress,
+  Tooltip
 } from '@mui/material';
 import {
   IconSettings,
-  IconPalette,
   IconPhoto,
   IconUpload,
   IconDeviceFloppy,
-  IconRefresh
+  IconTrash,
+  IconWorld,
+  IconMoon,
+  IconSun,
+  IconBrandTabler
 } from '@tabler/icons-react';
 import MainCard from '../../ui-component/cards/MainCard';
+import { useSettings } from '../../contexts/SettingsContext';
 
 const Settings = () => {
-  const [settings, setSettings] = useState({
-    siteName: 'Palets Admin',
-    siteDescription: 'Art Gallery Management System',
+  const { settings: globalSettings, loading: globalLoading, error: globalError, updateSettings, deleteFile, setError } = useSettings();
+  
+  const [localSettings, setLocalSettings] = useState({
+    site_name: '',
+    site_description: '',
     logo: null,
-    primaryColor: '#1976d2',
-    secondaryColor: '#00acc1',
-    successColor: '#4caf50',
-    errorColor: '#e53935',
-    warningColor: '#ff9800',
-    darkMode: false,
-    itemsPerPage: 15,
-    autoSave: true,
-    showAnimations: true
+    favicon: null,
+    dark_mode: false
   });
-
+  
   const [logoPreview, setLogoPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const [faviconPreview, setFaviconPreview] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const colorPresets = [
-    { name: 'Default Blue', primary: '#1976d2', secondary: '#00acc1' },
-    { name: 'Purple Elegance', primary: '#7b1fa2', secondary: '#e91e63' },
-    { name: 'Green Nature', primary: '#388e3c', secondary: '#ff8f00' },
-    { name: 'Orange Sunset', primary: '#f57c00', secondary: '#d32f2f' },
-    { name: 'Teal Ocean', primary: '#00695c', secondary: '#1976d2' },
-    { name: 'Indigo Night', primary: '#303f9f', secondary: '#7b1fa2' }
-  ];
+  // Sync global settings to local state
+  useEffect(() => {
+    if (globalSettings) {
+      setLocalSettings({
+        site_name: globalSettings.site_name || '',
+        site_description: globalSettings.site_description || '',
+        logo: null, // Don't set file objects from server
+        favicon: null,
+        dark_mode: globalSettings.dark_mode || false
+      });
+      setLogoPreview(globalSettings.logo);
+      setFaviconPreview(globalSettings.favicon);
+    }
+  }, [globalSettings]);
 
   const handleInputChange = (field, value) => {
-    setSettings(prev => ({
+    setLocalSettings(prev => ({
       ...prev,
       [field]: value
     }));
+    setHasChanges(true);
   };
 
-  const handleLogoUpload = (event) => {
+  const handleFileUpload = (event, type) => {
     const file = event.target.files[0];
     if (file) {
+      // Validate file size
+      const maxSize = type === 'favicon' ? 1024 * 1024 : 2048 * 1024; // 1MB for favicon, 2MB for logo
+      if (file.size > maxSize) {
+        setSnackbar({
+          open: true,
+          message: `File size too large. Maximum ${type === 'favicon' ? '1MB' : '2MB'} allowed.`,
+          severity: 'error'
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
-        setLogoPreview(e.target.result);
-        setSettings(prev => ({
+        if (type === 'logo') {
+          setLogoPreview(e.target.result);
+        } else {
+          setFaviconPreview(e.target.result);
+        }
+        setLocalSettings(prev => ({
           ...prev,
-          logo: file
+          [type]: file
         }));
+        setHasChanges(true);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const applyColorPreset = (preset) => {
-    setSettings(prev => ({
-      ...prev,
-      primaryColor: preset.primary,
-      secondaryColor: preset.secondary
-    }));
+  const handleDeleteFile = async (type) => {
+    try {
+      const result = await deleteFile(type);
+      if (result.success) {
+        if (type === 'logo') {
+          setLogoPreview(null);
+        } else {
+          setFaviconPreview(null);
+        }
+        setLocalSettings(prev => ({
+          ...prev,
+          [type]: null
+        }));
+        setSnackbar({
+          open: true,
+          message: result.message,
+          severity: 'success'
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: result.message,
+          severity: 'error'
+        });
+      }
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete file',
+        severity: 'error'
+      });
+    }
   };
 
   const handleSave = async () => {
     try {
-      setLoading(true);
-      setError('');
-      
-      // Here you would typically save to your backend
-      // For now, we'll just simulate the save
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSuccess('Settings saved successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      const result = await updateSettings(localSettings);
+      if (result.success) {
+        setHasChanges(false);
+        setSnackbar({
+          open: true,
+          message: result.message,
+          severity: 'success'
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: result.message,
+          severity: 'error'
+        });
+      }
     } catch (err) {
-      setError('Failed to save settings. Please try again.');
-    } finally {
-      setLoading(false);
+      setSnackbar({
+        open: true,
+        message: 'Failed to save settings',
+        severity: 'error'
+      });
     }
   };
 
-  const resetToDefaults = () => {
-    setSettings({
-      siteName: 'Palets Admin',
-      siteDescription: 'Art Gallery Management System',
-      logo: null,
-      primaryColor: '#1976d2',
-      secondaryColor: '#00acc1',
-      successColor: '#4caf50',
-      errorColor: '#e53935',
-      warningColor: '#ff9800',
-      darkMode: false,
-      itemsPerPage: 15,
-      autoSave: true,
-      showAnimations: true
-    });
-    setLogoPreview(null);
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+    setError(null);
   };
 
-  return (
-    <MainCard
-      title="Dashboard Settings"
-      secondary={
-        <Button
-          variant="contained"
-          startIcon={<IconDeviceFloppy />}
-          onClick={handleSave}
-          disabled={loading}
-        >
-          {loading ? 'Saving...' : 'Save Settings'}
-        </Button>
-      }
-    >
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-      
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          {success}
-        </Alert>
-      )}
+  if (globalLoading) {
+    return (
+      <MainCard title="Settings">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress />
+        </Box>
+      </MainCard>
+    );
+  }
 
-      <Grid container spacing={3}>
-        {/* General Settings */}
-        <Grid item xs={12} md={6}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconSettings size={20} />
-                General Settings
+  return (
+    <>
+      <MainCard
+        title={
+          <Box display="flex" alignItems="center" gap={1}>
+            <IconSettings size={24} />
+            <Typography variant="h4">Website Settings</Typography>
+          </Box>
+        }
+        secondary={
+          <Button
+            variant="contained"
+            startIcon={globalLoading ? <CircularProgress size={16} /> : <IconDeviceFloppy />}
+            onClick={handleSave}
+            disabled={globalLoading || !hasChanges}
+            sx={{ minWidth: 140 }}
+          >
+            {globalLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        }
+      >
+        {(globalError || snackbar.severity === 'error') && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            {globalError || snackbar.message}
+          </Alert>
+        )}
+
+        <Grid container spacing={4}>
+          {/* General Information */}
+          <Grid item xs={12} lg={8}>
+            <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <IconWorld size={20} />
+                General Information
               </Typography>
-              <Divider sx={{ mb: 3 }} />
               
               <Stack spacing={3}>
                 <TextField
                   fullWidth
                   label="Site Name"
-                  value={settings.siteName}
-                  onChange={(e) => handleInputChange('siteName', e.target.value)}
+                  value={localSettings.site_name}
+                  onChange={(e) => handleInputChange('site_name', e.target.value)}
+                  placeholder="Enter your website name"
+                  variant="outlined"
                 />
                 
                 <TextField
                   fullWidth
                   label="Site Description"
                   multiline
-                  rows={3}
-                  value={settings.siteDescription}
-                  onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                  rows={4}
+                  value={localSettings.site_description}
+                  onChange={(e) => handleInputChange('site_description', e.target.value)}
+                  placeholder="Describe your website"
+                  variant="outlined"
                 />
-                
-                <FormControl fullWidth>
-                  <InputLabel>Items Per Page</InputLabel>
-                  <Select
-                    value={settings.itemsPerPage}
-                    onChange={(e) => handleInputChange('itemsPerPage', e.target.value)}
-                    label="Items Per Page"
-                  >
-                    <MenuItem value={10}>10</MenuItem>
-                    <MenuItem value={15}>15</MenuItem>
-                    <MenuItem value={20}>20</MenuItem>
-                    <MenuItem value={25}>25</MenuItem>
-                    <MenuItem value={50}>50</MenuItem>
-                  </Select>
-                </FormControl>
-                
-                <Stack direction="row" spacing={2}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.darkMode}
-                        onChange={(e) => handleInputChange('darkMode', e.target.checked)}
-                      />
-                    }
-                    label="Dark Mode"
-                  />
-                  
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.autoSave}
-                        onChange={(e) => handleInputChange('autoSave', e.target.checked)}
-                      />
-                    }
-                    label="Auto Save"
-                  />
-                  
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.showAnimations}
-                        onChange={(e) => handleInputChange('showAnimations', e.target.checked)}
-                      />
-                    }
-                    label="Animations"
-                  />
-                </Stack>
               </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+            </Paper>
+          </Grid>
 
-        {/* Logo Settings */}
-        <Grid item xs={12} md={6}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconPhoto size={20} />
-                Logo & Branding
+          {/* Theme Settings */}
+          <Grid item xs={12} lg={4}>
+            <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                {localSettings.dark_mode ? <IconMoon size={20} /> : <IconSun size={20} />}
+                Theme Settings
               </Typography>
-              <Divider sx={{ mb: 3 }} />
               
-              <Stack spacing={3} alignItems="center">
-                <Box sx={{ textAlign: 'center' }}>
-                  <Avatar
-                    src={logoPreview}
-                    sx={{ 
-                      width: 120, 
-                      height: 120, 
-                      mb: 2,
-                      border: '3px dashed',
-                      borderColor: 'primary.main',
-                      backgroundColor: 'primary.light'
-                    }}
-                  >
-                    <IconPhoto size={40} />
-                  </Avatar>
-                  
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={localSettings.dark_mode}
+                    onChange={(e) => handleInputChange('dark_mode', e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography>Dark Mode</Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {localSettings.dark_mode ? 'Enabled' : 'Disabled'}
+                    </Typography>
+                  </Box>
+                }
+              />
+            </Paper>
+          </Grid>
+
+          {/* Logo Upload */}
+          <Grid item xs={12} md={6}>
+            <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <IconBrandTabler size={20} />
+                Website Logo
+              </Typography>
+              
+              <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+                <Avatar
+                  src={logoPreview}
+                  sx={{ 
+                    width: 100, 
+                    height: 100,
+                    border: '2px dashed',
+                    borderColor: logoPreview ? 'primary.main' : 'grey.300',
+                    backgroundColor: logoPreview ? 'transparent' : 'grey.50'
+                  }}
+                >
+                  {!logoPreview && <IconPhoto size={32} color="#999" />}
+                </Avatar>
+                
+                <Stack direction="row" spacing={1}>
                   <input
                     accept="image/*"
                     style={{ display: 'none' }}
                     id="logo-upload"
                     type="file"
-                    onChange={handleLogoUpload}
+                    onChange={(e) => handleFileUpload(e, 'logo')}
                   />
                   <label htmlFor="logo-upload">
                     <Button
                       variant="outlined"
                       component="span"
                       startIcon={<IconUpload />}
-                      fullWidth
+                      size="small"
                     >
-                      Upload Logo
+                      Upload
                     </Button>
                   </label>
                   
-                  <Typography variant="caption" color="textSecondary" display="block" mt={1}>
-                    Recommended: 200x200px, PNG or JPG
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Color Settings */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconPalette size={20} />
-                Color Theme
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-              
-              {/* Color Presets */}
-              <Typography variant="subtitle2" gutterBottom>
-                Quick Presets
-              </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
-                {colorPresets.map((preset, index) => (
-                  <Chip
-                    key={index}
-                    label={preset.name}
-                    onClick={() => applyColorPreset(preset)}
-                    sx={{
-                      backgroundColor: preset.primary,
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: preset.secondary
-                      }
-                    }}
-                  />
-                ))}
-              </Stack>
-              
-              {/* Custom Colors */}
-              <Typography variant="subtitle2" gutterBottom>
-                Custom Colors
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Primary Color"
-                    type="color"
-                    value={settings.primaryColor}
-                    onChange={(e) => handleInputChange('primaryColor', e.target.value)}
-                    InputProps={{
-                      sx: { height: 56 }
-                    }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Secondary Color"
-                    type="color"
-                    value={settings.secondaryColor}
-                    onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
-                    InputProps={{
-                      sx: { height: 56 }
-                    }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Success Color"
-                    type="color"
-                    value={settings.successColor}
-                    onChange={(e) => handleInputChange('successColor', e.target.value)}
-                    InputProps={{
-                      sx: { height: 56 }
-                    }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Error Color"
-                    type="color"
-                    value={settings.errorColor}
-                    onChange={(e) => handleInputChange('errorColor', e.target.value)}
-                    InputProps={{
-                      sx: { height: 56 }
-                    }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Warning Color"
-                    type="color"
-                    value={settings.warningColor}
-                    onChange={(e) => handleInputChange('warningColor', e.target.value)}
-                    InputProps={{
-                      sx: { height: 56 }
-                    }}
-                  />
-                </Grid>
-              </Grid>
-              
-              {/* Color Preview */}
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Preview
-                </Typography>
-                <Stack direction="row" spacing={1}>
-                  <Button 
-                    variant="contained" 
-                    sx={{ backgroundColor: settings.primaryColor }}
-                  >
-                    Primary
-                  </Button>
-                  <Button 
-                    variant="contained" 
-                    sx={{ backgroundColor: settings.secondaryColor }}
-                  >
-                    Secondary
-                  </Button>
-                  <Button 
-                    variant="contained" 
-                    sx={{ backgroundColor: settings.successColor }}
-                  >
-                    Success
-                  </Button>
-                  <Button 
-                    variant="contained" 
-                    sx={{ backgroundColor: settings.errorColor }}
-                  >
-                    Error
-                  </Button>
-                  <Button 
-                    variant="contained" 
-                    sx={{ backgroundColor: settings.warningColor }}
-                  >
-                    Warning
-                  </Button>
+                  {logoPreview && (
+                    <Tooltip title="Delete logo">
+                      <IconButton
+                        onClick={() => handleDeleteFile('logo')}
+                        color="error"
+                        size="small"
+                      >
+                        <IconTrash size={16} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Stack>
+                
+                <Typography variant="caption" color="textSecondary" textAlign="center">
+                  Recommended: 200x200px, PNG/JPG, Max 2MB
+                </Typography>
               </Box>
-            </CardContent>
-          </Card>
+            </Paper>
+          </Grid>
+
+          {/* Favicon Upload */}
+          <Grid item xs={12} md={6}>
+            <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <IconPhoto size={20} />
+                Website Favicon
+              </Typography>
+              
+              <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+                <Avatar
+                  src={faviconPreview}
+                  sx={{ 
+                    width: 64, 
+                    height: 64,
+                    border: '2px dashed',
+                    borderColor: faviconPreview ? 'primary.main' : 'grey.300',
+                    backgroundColor: faviconPreview ? 'transparent' : 'grey.50'
+                  }}
+                >
+                  {!faviconPreview && <IconPhoto size={24} color="#999" />}
+                </Avatar>
+                
+                <Stack direction="row" spacing={1}>
+                  <input
+                    accept="image/*,.ico"
+                    style={{ display: 'none' }}
+                    id="favicon-upload"
+                    type="file"
+                    onChange={(e) => handleFileUpload(e, 'favicon')}
+                  />
+                  <label htmlFor="favicon-upload">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      startIcon={<IconUpload />}
+                      size="small"
+                    >
+                      Upload
+                    </Button>
+                  </label>
+                  
+                  {faviconPreview && (
+                    <Tooltip title="Delete favicon">
+                      <IconButton
+                        onClick={() => handleDeleteFile('favicon')}
+                        color="error"
+                        size="small"
+                      >
+                        <IconTrash size={16} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Stack>
+                
+                <Typography variant="caption" color="textSecondary" textAlign="center">
+                  Recommended: 32x32px, ICO/PNG, Max 1MB
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
         </Grid>
 
-        {/* Action Buttons */}
-        <Grid item xs={12}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Button
-              variant="outlined"
-              startIcon={<IconRefresh />}
-              onClick={resetToDefaults}
-              color="secondary"
-            >
-              Reset to Defaults
-            </Button>
-            
-            <Button
-              variant="contained"
-              startIcon={<IconDeviceFloppy />}
-              onClick={handleSave}
-              disabled={loading}
-              size="large"
-            >
-              {loading ? 'Saving...' : 'Save All Settings'}
-            </Button>
+        {hasChanges && (
+          <Box mt={3} p={2} bgcolor="warning.light" borderRadius={1}>
+            <Typography variant="body2" color="warning.dark">
+              You have unsaved changes. Don't forget to save your settings.
+            </Typography>
           </Box>
-        </Grid>
-      </Grid>
-    </MainCard>
+        )}
+      </MainCard>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

@@ -46,6 +46,10 @@ const GalleriesForm = Loadable(lazy(() => import('views/galleries/GalleriesForm'
 // settings routing
 const Settings = Loadable(lazy(() => import('views/settings/Settings')));
 
+// orders routing
+const OrdersList = Loadable(lazy(() => import('views/orders/OrdersList')));
+const OrderView = Loadable(lazy(() => import('views/orders/OrderView')));
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -148,6 +152,14 @@ const MainRoutes = {
     {
       path: 'galleries/edit/:slug',
       element: <GalleriesForm />
+    },
+    {
+      path: 'orders',
+      element: <OrdersList />
+    },
+    {
+      path: 'orders/:id',
+      element: <OrderView />
     },
     {
       path: 'settings',

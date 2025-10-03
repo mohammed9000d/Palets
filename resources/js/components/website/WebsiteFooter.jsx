@@ -18,8 +18,10 @@ import {
   IconMapPin,
   IconPalette
 } from '@tabler/icons-react';
+import { useThemeSettings } from '../../hooks/useThemeSettings';
 
 const WebsiteFooter = () => {
+  const { logo, siteName, siteDescription } = useThemeSettings();
   return (
     <Box component="footer" sx={{ bgcolor: 'grey.900', color: 'white', pt: 6, pb: 4 }}>
       <Container maxWidth="lg">
@@ -27,14 +29,28 @@ const WebsiteFooter = () => {
           {/* Company Info */}
           <Grid item xs={12} md={4}>
             <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <IconPalette size={28} color="#2196F3" />
+              {logo ? (
+                <Box
+                  component="img"
+                  src={logo}
+                  alt={siteName}
+                  sx={{ 
+                    height: 32,
+                    width: 'auto',
+                    maxWidth: 120,
+                    objectFit: 'contain',
+                    filter: 'brightness(0) invert(1)' // Make logo white in dark footer
+                  }}
+                />
+              ) : (
+                <IconPalette size={28} color="#2196F3" />
+              )}
               <Typography variant="h5" fontWeight="bold">
-                Palets
+                {siteName}
               </Typography>
             </Box>
             <Typography variant="body2" color="grey.400" paragraph>
-              Discover unique art panel collections from talented artists around the world. 
-              Transform your space with carefully curated artistic expressions.
+              {siteDescription || 'Discover unique art panel collections from talented artists around the world. Transform your space with carefully curated artistic expressions.'}
             </Typography>
             <Stack direction="row" spacing={1}>
               <IconButton sx={{ color: 'grey.400', '&:hover': { color: '#E1306C' } }}>
@@ -106,7 +122,7 @@ const WebsiteFooter = () => {
               <Box display="flex" alignItems="center" gap={1}>
                 <IconPhone size={16} />
                 <Typography variant="body2" color="grey.400">
-                  +1 (555) 123-4567
+                  +39 02 1234 5678
                 </Typography>
               </Box>
               <Box display="flex" alignItems="center" gap={1}>

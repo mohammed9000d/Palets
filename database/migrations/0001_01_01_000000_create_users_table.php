@@ -20,7 +20,7 @@ return new class extends Migration
             
             // Contact Information
             $table->string('phone')->nullable();
-            $table->string('country_code', 5)->default('+1');
+            $table->string('country_code', 5)->default('+39');
             
             // Profile Information
             $table->string('first_name')->nullable();

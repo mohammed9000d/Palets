@@ -8,7 +8,11 @@ import router from 'routes';
 import NavigationScroll from 'layout/NavigationScroll';
 import ThemeCustomization from 'themes';
 import LoadingScreen from 'components/LoadingScreen';
+import FaviconUpdater from 'components/FaviconUpdater';
 import configService from 'services/configService';
+import { LoadingProvider } from 'contexts/LoadingContext';
+import { SettingsProvider } from 'contexts/SettingsContext';
+import { AdminAuthProvider } from 'contexts/AdminAuthContext';
 
 // ==============================|| APP ||============================== //
 
@@ -35,25 +39,44 @@ export default function App() {
 
   if (configLoading) {
     return (
-      <ThemeCustomization>
-        <LoadingScreen message="Initializing application..." />
-      </ThemeCustomization>
+      <LoadingProvider>
+        <AdminAuthProvider>
+          <SettingsProvider>
+            <ThemeCustomization>
+              <LoadingScreen message="Initializing application..." />
+            </ThemeCustomization>
+          </SettingsProvider>
+        </AdminAuthProvider>
+      </LoadingProvider>
     );
   }
 
   if (configError) {
     return (
-      <ThemeCustomization>
-        <LoadingScreen message={`Configuration Error: ${configError}`} />
-      </ThemeCustomization>
+      <LoadingProvider>
+        <AdminAuthProvider>
+          <SettingsProvider>
+            <ThemeCustomization>
+              <LoadingScreen message={`Configuration Error: ${configError}`} />
+            </ThemeCustomization>
+          </SettingsProvider>
+        </AdminAuthProvider>
+      </LoadingProvider>
     );
   }
 
   return (
-    <ThemeCustomization>
-      <NavigationScroll>
-        <RouterProvider router={router} />
-      </NavigationScroll>
-    </ThemeCustomization>
+    <LoadingProvider>
+      <AdminAuthProvider>
+        <SettingsProvider>
+          <ThemeCustomization>
+            <FaviconUpdater />
+          <NavigationScroll>
+            <RouterProvider router={router} />
+          </NavigationScroll>
+          </ThemeCustomization>
+        </SettingsProvider>
+      </AdminAuthProvider>
+    </LoadingProvider>
   );
 }

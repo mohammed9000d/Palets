@@ -19,7 +19,13 @@ import {
   alpha,
   CircularProgress,
   Card,
-  CardContent
+  CardContent,
+  Chip,
+  Stack,
+  Badge,
+  Tabs,
+  Tab,
+  Skeleton
 } from '@mui/material';
 import {
   IconUser,
@@ -30,10 +36,10 @@ import {
   IconCamera,
   IconDeviceFloppy,
   IconArrowLeft,
-  IconSettings,
   IconBell,
   IconGlobe,
-  IconCreditCard
+  IconCreditCard,
+  IconShield
 } from '@tabler/icons-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -44,46 +50,37 @@ const Profile = () => {
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
-    phone: user?.phone || '',
-    country_code: user?.country_code || '+1',
-    date_of_birth: user?.date_of_birth || '',
-    gender: user?.gender || '',
-    street_address: user?.street_address || '',
-    city: user?.city || '',
-    state: user?.state || '',
-    postal_code: user?.postal_code || '',
-    country: user?.country || '',
-    billing_street_address: user?.billing_street_address || '',
-    billing_city: user?.billing_city || '',
-    billing_state: user?.billing_state || '',
-    billing_postal_code: user?.billing_postal_code || '',
-    billing_country: user?.billing_country || '',
-    newsletter_subscription: user?.newsletter_subscription || false,
-    sms_notifications: user?.sms_notifications || false,
-    preferred_language: user?.preferred_language || 'en',
-    timezone: user?.timezone || 'UTC',
+    name: '',
+    phone: '',
+    country_code: '+39',
+    date_of_birth: '',
+    gender: '',
+    street_address: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: '',
+    billing_street_address: '',
+    billing_city: '',
+    billing_state: '',
+    billing_postal_code: '',
+    billing_country: '',
+    newsletter_subscription: false,
+    sms_notifications: false,
+    preferred_language: 'en',
+    timezone: 'UTC',
     avatar: null
   });
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [activeTab, setActiveTab] = useState('personal');
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
-  const countryCodes = [
-    { value: '+1', label: '+1 (US/CA)' },
-    { value: '+44', label: '+44 (UK)' },
-    { value: '+33', label: '+33 (FR)' },
-    { value: '+49', label: '+49 (DE)' },
-    { value: '+39', label: '+39 (IT)' },
-    { value: '+34', label: '+34 (ES)' },
-    { value: '+81', label: '+81 (JP)' },
-    { value: '+86', label: '+86 (CN)' },
-    { value: '+91', label: '+91 (IN)' },
-    { value: '+61', label: '+61 (AU)' },
-  ];
+  // Static Italy country code
+  const ITALY_COUNTRY_CODE = '+39';
 
   const languages = [
     { value: 'en', label: 'English' },
@@ -110,12 +107,28 @@ const Profile = () => {
     { value: 'Australia/Sydney', label: 'Sydney' },
   ];
 
-  // Redirect if not authenticated
-  React.useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login', { state: { from: { pathname: '/profile' } } });
+  // Helper function to format date for HTML date input
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    // If it's already in YYYY-MM-DD format, return as is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
     }
-  }, [isAuthenticated, authLoading, navigate]);
+    // If it's in ISO format, extract just the date part
+    if (dateString.includes('T')) {
+      return dateString.split('T')[0];
+    }
+    // Try to parse and format the date
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    } catch (e) {
+      console.warn('Could not parse date:', dateString);
+    }
+    return '';
+  };
 
   const handleChange = (e) => {
     const { name, value, checked } = e.target;
@@ -129,10 +142,30 @@ const Profile = () => {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({ type: 'error', text: 'File size must be less than 5MB' });
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setMessage({ type: 'error', text: 'Please select a valid image file (JPEG, PNG, GIF, or WebP)' });
+        return;
+      }
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+
       setFormData(prev => ({
         ...prev,
         avatar: file
       }));
+
+      // Clear any previous error messages
+      if (message.text) setMessage({ type: '', text: '' });
     }
   };
 
@@ -147,6 +180,14 @@ const Profile = () => {
       if (result.success) {
         setMessage({ type: 'success', text: result.message });
         setFormData(prev => ({ ...prev, avatar: null }));
+        // Clear preview and force re-render after user state updates
+        setTimeout(() => {
+          setAvatarPreview(null);
+          setForceUpdate(prev => prev + 1); // Force component re-render
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        }, 1000); // Give time for user state to update
       } else {
         setMessage({ type: 'error', text: result.message });
       }
@@ -157,176 +198,445 @@ const Profile = () => {
     }
   };
 
-  if (authLoading) {
+  // Redirect if not authenticated
+  React.useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: '/profile' } } });
+    }
+  }, [isAuthenticated, authLoading, navigate]);
+
+  // Update form data when user data becomes available
+  React.useEffect(() => {
+    if (user && Object.keys(user).length > 0) {
+      const newFormData = {
+        name: user.name || '',
+        phone: user.phone || '',
+        country_code: user.country_code || '+39',
+        date_of_birth: formatDateForInput(user.date_of_birth),
+        gender: user.gender || '',
+        street_address: user.street_address || '',
+        city: user.city || '',
+        state: user.state || '',
+        postal_code: user.postal_code || '',
+        country: user.country || '',
+        billing_street_address: user.billing_street_address || '',
+        billing_city: user.billing_city || '',
+        billing_state: user.billing_state || '',
+        billing_postal_code: user.billing_postal_code || '',
+        billing_country: user.billing_country || '',
+        newsletter_subscription: user.newsletter_subscription || false,
+        sms_notifications: user.sms_notifications || false,
+        preferred_language: user.preferred_language || 'en',
+        timezone: user.timezone || 'UTC',
+        avatar: null
+      };
+      setFormData(newFormData);
+    }
+  }, [user]);
+
+  if (authLoading || (isAuthenticated && !user)) {
     return (
       <Box
         sx={{
           minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
+          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '300px',
+            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
+            zIndex: 0
+          }
         }}
       >
-        <CircularProgress />
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: 4 }}>
+          {/* Back Button Skeleton */}
+          <Box sx={{ pt: 4, pb: 2 }}>
+            <Skeleton variant="rectangular" width={150} height={40} sx={{ borderRadius: 3 }} />
+          </Box>
+
+          {/* Profile Header Skeleton */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 3, md: 5 },
+              borderRadius: 4,
+              background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+              mb: 4
+            }}
+          >
+            <Grid container spacing={4} alignItems="center">
+              <Grid item xs={12} md={4}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' } }}>
+                  <Skeleton variant="circular" width={120} height={120} sx={{ mb: 3 }} />
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={8}>
+                <Box sx={{ pl: { xs: 0, md: 2 } }}>
+                  <Skeleton variant="text" width="60%" height={50} sx={{ mb: 1 }} />
+                  <Skeleton variant="text" width="40%" height={30} sx={{ mb: 2 }} />
+                  <Skeleton variant="text" width="50%" height={20} sx={{ mb: 3 }} />
+                </Box>
+              </Grid>
+            </Grid>
+          </Paper>
+
+          {/* Form Content Skeleton */}
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 4,
+              background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.08)'
+            }}
+          >
+            {/* Tabs Skeleton */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 2, md: 4 } }}>
+              <Box sx={{ display: 'flex', gap: 4, py: 2 }}>
+                <Skeleton variant="rectangular" width={120} height={40} sx={{ borderRadius: 2 }} />
+                <Skeleton variant="rectangular" width={100} height={40} sx={{ borderRadius: 2 }} />
+                <Skeleton variant="rectangular" width={80} height={40} sx={{ borderRadius: 2 }} />
+              </Box>
+            </Box>
+
+            {/* Form Fields Skeleton */}
+            <Box sx={{ p: { xs: 3, md: 5 } }}>
+              <Grid container spacing={4}>
+                <Grid item xs={12}>
+                  <Skeleton variant="rectangular" width="100%" height={56} sx={{ borderRadius: 3 }} />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Skeleton variant="rectangular" width="100%" height={56} sx={{ borderRadius: 3 }} />
+                </Grid>
+                <Grid item xs={12} sm={8}>
+                  <Skeleton variant="rectangular" width="100%" height={56} sx={{ borderRadius: 3 }} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Skeleton variant="rectangular" width="100%" height={56} sx={{ borderRadius: 3 }} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Skeleton variant="rectangular" width="100%" height={56} sx={{ borderRadius: 3 }} />
+                </Grid>
+                <Grid item xs={12}>
+                  <Skeleton variant="rectangular" width="100%" height={56} sx={{ borderRadius: 3 }} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Skeleton variant="rectangular" width="100%" height={56} sx={{ borderRadius: 3 }} />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Skeleton variant="rectangular" width="100%" height={56} sx={{ borderRadius: 3 }} />
+                </Grid>
+              </Grid>
+
+              {/* Save Button Skeleton */}
+              <Box sx={{ mt: 6, display: 'flex', justifyContent: 'flex-end' }}>
+                <Skeleton variant="rectangular" width={150} height={50} sx={{ borderRadius: 4 }} />
+              </Box>
+            </Box>
+          </Paper>
+        </Container>
       </Box>
     );
   }
 
+
   const tabs = [
     { id: 'personal', label: 'Personal Info', icon: IconUser },
     { id: 'address', label: 'Address', icon: IconMapPin },
-    { id: 'billing', label: 'Billing', icon: IconCreditCard },
-    { id: 'preferences', label: 'Preferences', icon: IconSettings },
+    { id: 'billing', label: 'Billing', icon: IconCreditCard }
   ];
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
-        py: 4
+        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '300px',
+          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
+          zIndex: 0
+        }
       }}
     >
-      <Container maxWidth="lg">
-        <Box sx={{ mb: 4 }}>
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Enhanced Back Button */}
+        <Box sx={{ pt: 4, pb: 2 }}>
           <Button
             onClick={() => navigate('/')}
             startIcon={<IconArrowLeft size={20} />}
             sx={{
               color: theme.palette.text.secondary,
               textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderRadius: 3,
+              bgcolor: alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
               '&:hover': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.1)
-              }
+                backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                transform: 'translateX(-4px)',
+                boxShadow: '0 6px 25px rgba(0,0,0,0.12)'
+              },
+              transition: 'all 0.3s ease'
             }}
           >
             Back to Home
           </Button>
         </Box>
 
-        <Grid container spacing={4}>
-          {/* Profile Header */}
-          <Grid item xs={12}>
+        {/* Enhanced Profile Header */}
             <Paper
-              elevation={4}
+          elevation={0}
               sx={{
-                p: 4,
-                borderRadius: 3,
-                background: alpha('#ffffff', 0.9),
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Box sx={{ position: 'relative' }}>
-                  <Avatar
-                    src={user?.avatar}
-                    sx={{
-                      width: 100,
-                      height: 100,
-                      border: `4px solid ${theme.palette.primary.main}`,
-                      boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`
-                    }}
-                  >
-                    {user?.name?.charAt(0)?.toUpperCase()}
-                  </Avatar>
+            p: { xs: 3, md: 5 },
+            borderRadius: 4,
+            background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+            position: 'relative',
+            overflow: 'hidden',
+            mb: 4,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.success.main})`,
+              borderRadius: '4px 4px 0 0'
+            }
+          }}
+        >
+            <Grid container spacing={4} alignItems="center">
+              {/* Enhanced Avatar Section */}
+              <Grid item xs={12} md={4}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: { xs: 'center', md: 'flex-start' },
+                  textAlign: { xs: 'center', md: 'left' }
+                }}>
+                  <Box sx={{ position: 'relative', mb: 3 }}>
+                    {/* Animated Ring */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: -8,
+                        left: -8,
+                        right: -8,
+                        bottom: -8,
+                        borderRadius: '50%',
+                        background: `conic-gradient(from 0deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.success.main}, ${theme.palette.primary.main})`,
+                        animation: 'rotate 8s linear infinite',
+                        '@keyframes rotate': {
+                          '0%': { transform: 'rotate(0deg)' },
+                          '100%': { transform: 'rotate(360deg)' }
+                        },
+                        opacity: 0.8
+                      }}
+                    />
+                    
+                    {/* Avatar with enhanced styling */}
+                        <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                          <Avatar
+                            key={`${user?.avatar || 'no-avatar'}-${forceUpdate}`} // Force re-render when avatar changes
+                            src={avatarPreview || user?.avatar}
+                            sx={{
+                              width: 120,
+                              height: 120,
+                              border: `6px solid ${theme.palette.background.paper}`,
+                              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                              fontSize: '2.5rem',
+                              fontWeight: 'bold',
+                              bgcolor: theme.palette.primary.main,
+                              position: 'relative',
+                              zIndex: 1,
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                transform: 'scale(1.05)',
+                                boxShadow: '0 12px 40px rgba(0,0,0,0.2)'
+                              }
+                            }}
+                          >
+                            {user?.name?.charAt(0)?.toUpperCase()}
+                          </Avatar>
+                          
+                          {/* Upload/Change Photo Button */}
                   <IconButton
                     onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingAvatar}
                     sx={{
                       position: 'absolute',
-                      bottom: -5,
-                      right: -5,
+                              bottom: 8,
+                              right: 8,
                       backgroundColor: theme.palette.primary.main,
                       color: 'white',
-                      width: 35,
-                      height: 35,
+                              width: 40,
+                              height: 40,
+                              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
                       '&:hover': {
                         backgroundColor: theme.palette.primary.dark,
-                      }
-                    }}
-                  >
-                    <IconCamera size={18} />
+                                transform: 'scale(1.1)',
+                                boxShadow: '0 6px 20px rgba(0,0,0,0.3)'
+                              },
+                              '&:disabled': {
+                                backgroundColor: theme.palette.action.disabled
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            {uploadingAvatar ? (
+                              <CircularProgress size={20} color="inherit" />
+                            ) : (
+                              <IconCamera size={20} />
+                            )}
                   </IconButton>
+
+
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                            accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
                     onChange={handleAvatarChange}
                     style={{ display: 'none' }}
                   />
                 </Box>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold" gutterBottom>
+                </Box>
+                </Box>
+              </Grid>
+              
+              {/* Enhanced User Info */}
+              <Grid item xs={12} md={8}>
+                <Box sx={{ pl: { xs: 0, md: 2 } }}>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography 
+                      variant="h3" 
+                      sx={{ 
+                        fontWeight: 800,
+                        mb: 1,
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                        backgroundClip: 'text',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        fontSize: { xs: '2rem', md: '2.5rem' }
+                      }}
+                    >
                     {user?.name}
                   </Typography>
-                  <Typography variant="body1" color="text.secondary" gutterBottom>
+                    
+                    <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500, mb: 2 }}>
                     {user?.email}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Member since {new Date(user?.created_at || Date.now()).toLocaleDateString()}
+                    
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                      Member since {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
                   </Typography>
                 </Box>
               </Box>
-            </Paper>
           </Grid>
+            </Grid>
+          </Paper>
 
-          {/* Navigation Tabs */}
-          <Grid item xs={12} md={3}>
+
+        {/* Enhanced Form Content with Tabs */}
             <Paper
-              elevation={4}
+          elevation={0}
               sx={{
-                p: 2,
-                borderRadius: 3,
-                background: alpha('#ffffff', 0.9),
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
-              }}
-            >
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
+            borderRadius: 4,
+            background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+            {/* Horizontal Tabs */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs
+                value={activeTab}
+                onChange={(event, newValue) => setActiveTab(newValue)}
+                      sx={{
+                  px: { xs: 2, md: 4 },
+                  '& .MuiTab-root': {
+                        textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    minHeight: 64,
+                    '&.Mui-selected': {
+                      color: theme.palette.primary.main
+                    }
+                  },
+                  '& .MuiTabs-indicator': {
+                    height: 3,
+                    borderRadius: '3px 3px 0 0',
+                    background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+                  }
+                }}
+              >
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
                 return (
-                  <Button
+                    <Tab
                     key={tab.id}
-                    fullWidth
-                    variant={activeTab === tab.id ? 'contained' : 'text'}
-                    startIcon={<Icon size={20} />}
-                    onClick={() => setActiveTab(tab.id)}
+                      value={tab.id}
+                      label={tab.label}
+                      icon={<Icon size={20} />}
+                      iconPosition="start"
                     sx={{
-                      justifyContent: 'flex-start',
-                      mb: 1,
-                      textTransform: 'none',
-                      borderRadius: 2,
-                      py: 1.5,
-                      ...(activeTab === tab.id && {
-                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                        boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.3)}`
-                      })
-                    }}
-                  >
-                    {tab.label}
-                  </Button>
+                        '& .MuiTab-iconWrapper': {
+                          marginRight: 1,
+                          marginBottom: 0
+                        }
+                      }}
+                    />
                 );
               })}
-            </Paper>
-          </Grid>
+              </Tabs>
+            </Box>
 
-          {/* Form Content */}
-          <Grid item xs={12} md={9}>
-            <Paper
-              elevation={4}
-              sx={{
-                p: 4,
-                borderRadius: 3,
-                background: alpha('#ffffff', 0.9),
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
-              }}
-            >
-              {/* Message Alert */}
+            {/* Tab Content */}
+            <Box sx={{ p: { xs: 3, md: 5 } }}>
+                {/* Enhanced Message Alert */}
               {message.text && (
                 <Alert 
                   severity={message.type} 
-                  sx={{ mb: 3, borderRadius: 2 }}
+                    sx={{ 
+                      mb: 4, 
+                      borderRadius: 3,
+                      border: 'none',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                      '& .MuiAlert-icon': {
+                        fontSize: '1.5rem'
+                      },
+                      '& .MuiAlert-message': {
+                        fontWeight: 600
+                      }
+                    }}
                   onClose={() => setMessage({ type: '', text: '' })}
                 >
                   {message.text}
@@ -334,75 +644,260 @@ const Profile = () => {
               )}
 
               <Box component="form" onSubmit={handleSubmit}>
-                {/* Personal Information Tab */}
+                {/* Enhanced Personal Information Tab */}
                 {activeTab === 'personal' && (
                   <Box>
-                    <Typography variant="h5" fontWeight="bold" gutterBottom>
+                      <Box sx={{ mb: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                          <Box
+                            sx={{
+                              width: 4,
+                              height: 40,
+                              bgcolor: theme.palette.primary.main,
+                              borderRadius: 2
+                            }}
+                          />
+                          <Typography 
+                            variant="h4" 
+                            sx={{ 
+                              fontWeight: 700,
+                              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                              backgroundClip: 'text',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent'
+                            }}
+                          >
                       Personal Information
                     </Typography>
-                    <Divider sx={{ mb: 3 }} />
-                    
-                    <Grid container spacing={3}>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          name="name"
-                          label="Full Name"
-                          value={formData.name}
-                          onChange={handleChange}
-                          required
+                        </Box>
+                        <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                          Keep your personal information up to date for a better experience
+                        </Typography>
+                        <Divider sx={{ borderColor: alpha(theme.palette.primary.main, 0.1) }} />
+                      </Box>
+                      
+                      <Grid container spacing={4} sx={{ display: 'flex', flexDirection: 'column' }}>
+                        {/* Clickable Profile Photo Input */}
+                        <Grid item xs={12}>
+                          <Box sx={{ position: 'relative' }}>
+                            <Typography 
+                              variant="subtitle1" 
+                              sx={{ 
+                                fontWeight: 600, 
+                                mb: 2, 
+                                color: theme.palette.text.primary,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                              }}
+                            >
+                              <IconCamera size={20} color={theme.palette.primary.main} />
+                              Profile Photo
+                            </Typography>
+                            
+                            <Box
+                              onClick={() => fileInputRef.current?.click()}
+                              sx={{
+                                p: 4,
+                                borderRadius: 3,
+                                bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                border: `2px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
+                                cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minHeight: 200,
+                                gap: 3,
+                                '&:hover': !uploadingAvatar ? {
+                                  bgcolor: alpha(theme.palette.background.paper, 1),
+                                  borderColor: alpha(theme.palette.primary.main, 0.5),
+                                  boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`,
+                                  transform: 'translateY(-2px)'
+                                } : {}
+                              }}
+                            >
+                              {/* Clickable Avatar */}
+                              <Box sx={{ position: 'relative' }}>
+                                <Avatar
+                                  key={`${user?.avatar || 'no-avatar'}-${forceUpdate}`}
+                                  src={avatarPreview || user?.avatar}
+                                  sx={{
+                                    width: 100,
+                                    height: 100,
+                                    border: `4px solid ${theme.palette.primary.main}`,
+                                    fontSize: '2rem',
+                                    fontWeight: 'bold',
+                                    bgcolor: theme.palette.primary.main,
+                                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  {user?.name?.charAt(0)?.toUpperCase()}
+                                </Avatar>
+                                
+                                {/* Camera Overlay */}
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    bottom: -8,
+                                    right: -8,
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    bgcolor: theme.palette.primary.main,
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                    border: `3px solid ${theme.palette.background.paper}`
+                                  }}
+                                >
+                                  {uploadingAvatar ? (
+                                    <CircularProgress size={16} color="inherit" />
+                                  ) : (
+                                    <IconCamera size={18} />
+                                  )}
+                                </Box>
+                              </Box>
+                              
+                              {/* Upload Instructions */}
+                              <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                  {uploadingAvatar ? 'Uploading photo...' : 
+                                   user?.avatar ? 'Click to change your photo' : 'Click to upload your photo'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  JPEG, PNG, GIF, WebP • Max 5MB
+                                </Typography>
+                              </Box>
+                              
+                              {/* Success Indicator */}
+                              {avatarPreview && (
+                                <Box sx={{ 
+                                  px: 3,
+                                  py: 1.5,
+                                  borderRadius: 2, 
+                                  bgcolor: alpha(theme.palette.success.main, 0.1),
+                                  border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1
+                                }}>
+                                  <Box component="span" sx={{ fontSize: '1.1rem', color: theme.palette.success.main }}>✓</Box>
+                                  <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
+                                    New photo selected
+                                  </Typography>
+                                </Box>
+                              )}
+                              
+                              
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                                onChange={handleAvatarChange}
+                                style={{ display: 'none' }}
+                              />
+                            </Box>
+                          </Box>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                          <Box sx={{ position: 'relative' }}>
+                            <TextField
+                              fullWidth
+                              name="name"
+                              label="Full Name"
+                              value={formData.name || ''}
+                              onChange={handleChange}
+                              required
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 3,
+                                  bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                  '&:hover': {
+                                    bgcolor: alpha(theme.palette.background.paper, 1),
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                      borderColor: alpha(theme.palette.primary.main, 0.3)
+                                    }
+                                  },
+                                  '&.Mui-focused': {
+                                    bgcolor: alpha(theme.palette.background.paper, 1),
+                                    boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
+                                  }
+                                },
+                                '& .MuiInputLabel-root': {
+                                  fontWeight: 600
+                                }
+                              }}
                           InputProps={{
                             startAdornment: (
-                              <IconUser size={20} color={theme.palette.text.secondary} style={{ marginRight: 8 }} />
+                                  <IconUser size={20} color={theme.palette.primary.main} style={{ marginRight: 12 }} />
                             )
                           }}
                         />
+                          </Box>
                       </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          name="first_name"
-                          label="First Name"
-                          value={formData.first_name}
-                          onChange={handleChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          name="last_name"
-                          label="Last Name"
-                          value={formData.last_name}
-                          onChange={handleChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <TextField
-                          fullWidth
-                          select
-                          name="country_code"
-                          label="Country Code"
-                          value={formData.country_code}
-                          onChange={handleChange}
-                        >
-                          {countryCodes.map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                              {option.label}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      </Grid>
-                      <Grid item xs={12} sm={8}>
+                      <Grid item xs={12}>
                         <TextField
                           fullWidth
                           name="phone"
                           label="Phone Number"
                           value={formData.phone}
                           onChange={handleChange}
+                          placeholder="e.g., 123 456 7890"
+                          helperText="Italian phone number without country code"
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 3,
+                              bgcolor: alpha(theme.palette.background.paper, 0.8),
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.background.paper, 1),
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: alpha(theme.palette.primary.main, 0.3)
+                                }
+                              },
+                              '&.Mui-focused': {
+                                bgcolor: alpha(theme.palette.background.paper, 1),
+                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
+                              }
+                            },
+                            '& .MuiInputLabel-root': {
+                              fontWeight: 600
+                            }
+                          }}
                           InputProps={{
                             startAdornment: (
-                              <IconPhone size={20} color={theme.palette.text.secondary} style={{ marginRight: 8 }} />
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 1,
+                                pr: 1,
+                                borderRight: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                                mr: 1
+                              }}>
+                                <IconPhone size={20} color={theme.palette.primary.main} />
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                    color: theme.palette.text.primary,
+                                    fontWeight: 600,
+                                    fontSize: '0.95rem'
+                                  }}
+                                >
+                                  {ITALY_COUNTRY_CODE}
+                                </Typography>
+                              </Box>
                             )
+                          }}
+                          FormHelperTextProps={{
+                            sx: {
+                              color: theme.palette.text.secondary,
+                              fontSize: '0.75rem'
+                            }
                           }}
                         />
                       </Grid>
@@ -415,9 +910,28 @@ const Profile = () => {
                           value={formData.date_of_birth}
                           onChange={handleChange}
                           InputLabelProps={{ shrink: true }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 3,
+                              bgcolor: alpha(theme.palette.background.paper, 0.8),
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.background.paper, 1),
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: alpha(theme.palette.primary.main, 0.3)
+                                }
+                              },
+                              '&.Mui-focused': {
+                                bgcolor: alpha(theme.palette.background.paper, 1),
+                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
+                              }
+                            },
+                            '& .MuiInputLabel-root': {
+                              fontWeight: 600
+                            }
+                          }}
                           InputProps={{
                             startAdornment: (
-                              <IconCalendar size={20} color={theme.palette.text.secondary} style={{ marginRight: 8 }} />
+                              <IconCalendar size={20} color={theme.palette.primary.main} style={{ marginRight: 12 }} />
                             )
                           }}
                         />
@@ -430,6 +944,25 @@ const Profile = () => {
                           label="Gender"
                           value={formData.gender}
                           onChange={handleChange}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 3,
+                              bgcolor: alpha(theme.palette.background.paper, 0.8),
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.background.paper, 1),
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: alpha(theme.palette.primary.main, 0.3)
+                                }
+                              },
+                              '&.Mui-focused': {
+                                bgcolor: alpha(theme.palette.background.paper, 1),
+                                boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
+                              }
+                            },
+                            '& .MuiInputLabel-root': {
+                              fontWeight: 600
+                            }
+                          }}
                         >
                           <MenuItem value="">Select Gender</MenuItem>
                           <MenuItem value="male">Male</MenuItem>
@@ -658,8 +1191,9 @@ const Profile = () => {
                   </Box>
                 )}
 
-                {/* Save Button */}
-                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+                {/* Enhanced Save Button */}
+                <Box sx={{ mt: 6, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                  
                   <Button
                     type="submit"
                     variant="contained"
@@ -667,31 +1201,49 @@ const Profile = () => {
                     disabled={loading}
                     startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <IconDeviceFloppy size={20} />}
                     sx={{
-                      px: 4,
-                      py: 1.5,
-                      borderRadius: 2,
+                      px: 6,
+                      py: 2,
+                      borderRadius: 4,
                       textTransform: 'none',
                       fontSize: '1.1rem',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                      boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                      boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.3)}`,
+                      position: 'relative',
+                      overflow: 'hidden',
                       '&:hover': {
-                        boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
-                        transform: 'translateY(-2px)'
+                        boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.4)}`,
+                        transform: 'translateY(-3px)',
+                        '&::before': {
+                          opacity: 1
+                        }
                       },
                       '&:disabled': {
-                        transform: 'none'
+                        transform: 'none',
+                        '&::before': {
+                          opacity: 0
+                        }
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: `linear-gradient(135deg, ${alpha('#fff', 0.2)}, transparent)`,
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease'
                       },
                       transition: 'all 0.3s ease'
                     }}
                   >
-                    {loading ? 'Saving...' : 'Save Changes'}
+                    {loading ? 'Saving Changes...' : 'Save Changes'}
                   </Button>
+                </Box>
                 </Box>
               </Box>
             </Paper>
-          </Grid>
-        </Grid>
       </Container>
     </Box>
   );

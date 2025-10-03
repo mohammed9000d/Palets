@@ -303,6 +303,8 @@ class ArtPanelGalleryController extends Controller
                 'id' => $gallery->organizerArtist->id,
                 'artist_name' => $gallery->organizerArtist->artist_name,
                 'slug' => $gallery->organizerArtist->slug,
+                'avatar_url' => $gallery->organizerArtist->avatar_url,
+                'avatar_thumb_url' => $gallery->organizerArtist->avatar_thumb_url,
             ] : null,
             'main_title' => $gallery->main_title,
             'sub_title' => $gallery->sub_title,
@@ -339,6 +341,8 @@ class ArtPanelGalleryController extends Controller
                     'slug' => $artist->slug,
                     'role' => $artist->pivot->role,
                     'display_order' => $artist->pivot->display_order,
+                    'avatar_url' => $artist->avatar_url,
+                    'avatar_thumb_url' => $artist->avatar_thumb_url,
                 ];
             }),
             'participating_artists_count' => $gallery->artists->count(),

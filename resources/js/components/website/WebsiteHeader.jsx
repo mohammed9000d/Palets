@@ -30,10 +30,12 @@ import {
   IconUserPlus,
   IconUser,
   IconSettings,
-  IconLogout
+  IconLogout,
+  IconPackage
 } from '@tabler/icons-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useThemeSettings } from '../../hooks/useThemeSettings';
 import CartIcon from '../cart/CartIcon';
 
 const WebsiteHeader = () => {
@@ -43,7 +45,8 @@ const WebsiteHeader = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, loading } = useAuth();
+  const { siteName, logo } = useThemeSettings();
   
   // Debug user data
   React.useEffect(() => {
@@ -81,9 +84,26 @@ const WebsiteHeader = () => {
 
   const drawer = (
     <Box sx={{ textAlign: 'center' }}>
-      <Typography variant="h6" sx={{ my: 2, color: 'primary.main', fontWeight: 'bold' }}>
-        Palets
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', my: 2 }}>
+        {logo ? (
+          <Box
+            component="img"
+            src={logo}
+            alt={siteName}
+            sx={{ 
+              height: 40,
+              width: 'auto',
+              maxWidth: 150,
+              objectFit: 'contain',
+              mr: 1
+            }}
+          />
+        ) : (
+          <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+            {siteName}
+          </Typography>
+        )}
+      </Box>
       <List>
         {navigationItems.map((item) => (
           <ListItem key={item.label} disablePadding>
@@ -108,7 +128,25 @@ const WebsiteHeader = () => {
         <Divider sx={{ my: 2 }} />
         
         {/* Mobile Auth Buttons */}
-        {isAuthenticated ? (
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+            {/* General loading indicator for mobile */}
+            <Box
+              sx={{
+                width: 24,
+                height: 24,
+                border: `3px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                borderTop: `3px solid ${theme.palette.primary.main}`,
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' }
+                }
+              }}
+            />
+          </Box>
+        ) : isAuthenticated ? (
           <>
             <ListItem disablePadding>
               <Button
@@ -125,6 +163,23 @@ const WebsiteHeader = () => {
                 }}
               >
                 <ListItemText primary="Profile" />
+              </Button>
+            </ListItem>
+            <ListItem disablePadding>
+              <Button
+                component={Link}
+                to="/my-orders"
+                fullWidth
+                startIcon={<IconPackage />}
+                onClick={handleDrawerToggle}
+                sx={{
+                  justifyContent: 'flex-start',
+                  px: 2,
+                  py: 1,
+                  color: 'success.main'
+                }}
+              >
+                <ListItemText primary="My Orders" />
               </Button>
             </ListItem>
             <ListItem disablePadding>
@@ -202,20 +257,47 @@ const WebsiteHeader = () => {
         <Container maxWidth="lg">
           <Toolbar sx={{ px: { xs: 0, sm: 0 } }}>
             {/* Logo */}
-            <Typography
-              variant="h5"
+            <Box
               component={Link}
               to="/"
               sx={{
-                flexGrow: { xs: 1, md: 0 },
-                color: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
                 textDecoration: 'none',
-                fontWeight: 'bold',
-                mr: 4
+                flexGrow: { xs: 1, md: 0 },
+                mr: 4,
+                py: 1
               }}
             >
-              Palets
-            </Typography>
+              {logo ? (
+                <Box
+                  component="img"
+                  src={logo}
+                  alt={siteName}
+                  sx={{ 
+                    height: { xs: 35, md: 45 },
+                    width: 'auto',
+                    maxWidth: { xs: 120, md: 180 },
+                    objectFit: 'contain',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'scale(1.05)'
+                    }
+                  }}
+                />
+              ) : (
+                <Typography
+                  variant="h5"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 'bold',
+                    fontSize: { xs: '1.25rem', md: '1.5rem' }
+                  }}
+                >
+                  {siteName}
+                </Typography>
+              )}
+            </Box>
 
             {/* Desktop Navigation */}
             {!isMobile && (
@@ -243,7 +325,25 @@ const WebsiteHeader = () => {
             </Box>
 
             {/* Authentication Section */}
-            {isAuthenticated ? (
+            {loading ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 120, justifyContent: 'center' }}>
+                {/* General loading indicator */}
+                <Box
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    border: `3px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                    borderTop: `3px solid ${theme.palette.primary.main}`,
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' }
+                    }
+                  }}
+                />
+              </Box>
+            ) : isAuthenticated ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <IconButton
                   onClick={handleProfileMenuOpen}
@@ -408,6 +508,20 @@ const WebsiteHeader = () => {
         >
           <IconUser size={20} style={{ marginRight: 12 }} />
           My Profile
+        </MenuItem>
+        
+        <MenuItem
+          component={Link}
+          to="/my-orders"
+          sx={{
+            py: 1.5,
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.success.main, 0.1)
+            }
+          }}
+        >
+          <IconPackage size={20} style={{ marginRight: 12 }} />
+          My Orders
         </MenuItem>
         
         <MenuItem

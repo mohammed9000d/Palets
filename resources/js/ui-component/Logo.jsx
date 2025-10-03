@@ -2,8 +2,10 @@ import React from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
+import { Box, Typography } from '@mui/material';
 
 // project imports
+import { useThemeSettings } from '../hooks/useThemeSettings';
 
 /**
  * if you want to use image instead of <svg> uncomment following.
@@ -17,7 +19,42 @@ import { useTheme } from '@mui/material/styles';
 
 export default function Logo() {
   const theme = useTheme();
+  const { logo, siteName } = useThemeSettings();
 
+  // If custom logo is available, use it
+  if (logo) {
+    return (
+      <Box
+        component="img"
+        src={logo}
+        alt={siteName}
+        sx={{ 
+          height: 32,
+          width: 'auto',
+          maxWidth: 120,
+          objectFit: 'contain'
+        }}
+      />
+    );
+  }
+
+  // If custom logo is not available but siteName is different from default, show siteName
+  if (siteName && siteName !== 'Palets') {
+    return (
+      <Typography
+        variant="h6"
+        sx={{
+          color: theme.palette.primary.main,
+          fontWeight: 'bold',
+          fontSize: '1.1rem'
+        }}
+      >
+        {siteName}
+      </Typography>
+    );
+  }
+
+  // Default SVG logo
   return (
     /**
      * if you want to use image instead of svg uncomment following, and comment out <svg> element.

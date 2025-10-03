@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useLoading } from '../../contexts/LoadingContext';
 import {
   Box,
   Typography,
@@ -35,7 +36,8 @@ import {
   IconStar,
   IconTrendingUp,
   IconAward,
-  IconHeart
+  IconHeart,
+  IconBookmark
 } from '@tabler/icons-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay, EffectFade, Parallax } from 'swiper/modules';
@@ -51,6 +53,7 @@ const API_BASE_URL = '/api';
 
 const Home = () => {
   const theme = useTheme();
+  const { markContentReady } = useLoading();
   const [upcomingGalleries, setUpcomingGalleries] = useState([]);
   const [latestNews, setLatestNews] = useState([]);
   const [latestProducts, setLatestProducts] = useState([]);
@@ -98,24 +101,46 @@ const Home = () => {
     try {
       setLoading(true);
       
-      // Load upcoming galleries
+      // Load upcoming galleries (hero section data)
       const galleriesResponse = await axios.get(getApiUrl('public/art-panel-galleries?period=upcoming&per_page=5'));
       setUpcomingGalleries(galleriesResponse.data.data || []);
       
-      // Load latest news
-      const newsResponse = await axios.get(getApiUrl('public/news?per_page=6'));
-      setLatestNews(newsResponse.data.data || []);
+      // Signal that hero content is ready immediately after galleries load
+      setTimeout(() => {
+        console.log('Hero section data loaded - signaling ready');
+        markContentReady('home-hero');
+      }, 50); // Reduced delay for faster response
       
-      // Load latest products
-      const productsResponse = await axios.get(getApiUrl('public/products?status=published&per_page=8'));
-      setLatestProducts(productsResponse.data.data || []);
+      // Load other sections in background (won't affect loading screen)
+      const loadOtherSections = async () => {
+        try {
+          // Load latest news - get latest 3 published articles
+          const newsResponse = await axios.get(getApiUrl('public/news?per_page=3&status=published&sort=published_at:desc'));
+          setLatestNews(newsResponse.data.data || []);
+          
+          // Load latest products
+          const productsResponse = await axios.get(getApiUrl('public/products?status=published&per_page=8'));
+          setLatestProducts(productsResponse.data.data || []);
+          
+          // Load featured artists
+          const artistsResponse = await axios.get(getApiUrl('public/artists?per_page=10'));
+          setFeaturedArtists(artistsResponse.data.data || []);
+          
+          console.log('Background sections loaded');
+        } catch (error) {
+          console.error('Error loading background sections:', error);
+        }
+      };
       
-      // Load featured artists
-      const artistsResponse = await axios.get(getApiUrl('public/artists?per_page=10'));
-      setFeaturedArtists(artistsResponse.data.data || []);
+      // Load other sections without blocking hero display
+      loadOtherSections();
       
     } catch (error) {
-      console.error('Error loading home data:', error);
+      console.error('Error loading hero data:', error);
+      // Still signal ready even if hero fails to prevent infinite loading
+      setTimeout(() => {
+        markContentReady('home-hero');
+      }, 50);
     } finally {
       setLoading(false);
     }
@@ -125,7 +150,7 @@ const Home = () => {
 
   // Hero Slider Component - Professional Design
   const HeroSlider = () => (
-    <Box sx={{ position: 'relative', height: '85vh', overflow: 'hidden' }}>
+    <Box data-hero-section sx={{ position: 'relative', height: '85vh', overflow: 'hidden' }}>
       {loading ? (
         <Skeleton variant="rectangular" width="100%" height="100%" />
       ) : upcomingGalleries.length > 0 ? (
@@ -421,21 +446,23 @@ const Home = () => {
         </Box>
       )}
       
-      {/* Custom Pagination Styles */}
-      <style jsx global>{`
-        .hero-bullet {
-          width: 12px !important;
-          height: 12px !important;
-          background: rgba(255,255,255,0.4) !important;
-          border-radius: 50% !important;
-          margin: 0 6px !important;
-          transition: all 0.3s ease !important;
-        }
-        .hero-bullet-active {
-          background: white !important;
-          transform: scale(1.2) !important;
-        }
-      `}</style>
+      {/* Custom Pagination Styles - Injected via CSS */}
+      <style>
+        {`
+          .hero-bullet {
+            width: 12px !important;
+            height: 12px !important;
+            background: rgba(255,255,255,0.4) !important;
+            border-radius: 50% !important;
+            margin: 0 6px !important;
+            transition: all 0.3s ease !important;
+          }
+          .hero-bullet-active {
+            background: white !important;
+            transform: scale(1.2) !important;
+          }
+        `}
+      </style>
     </Box>
   );
 
@@ -513,6 +540,8 @@ const Home = () => {
                 <Box key={news.id} sx={{ flex: { md: '1 1 33.333%' } }}>
                   <Slide direction="up" in timeout={600 + index * 200}>
                     <Card 
+                      component={Link}
+                      to={`/articles/${news.id}`}
                       sx={{ 
                         height: 420, 
                         display: 'flex', 
@@ -521,9 +550,12 @@ const Home = () => {
                         overflow: 'hidden',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                         transition: 'all 0.3s ease',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
                         '&:hover': { 
                           transform: 'translateY(-8px)',
-                          boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                          boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+                          textDecoration: 'none'
                         }
                       }}
                     >
@@ -742,6 +774,8 @@ const Home = () => {
                 <SwiperSlide key={product.id}>
                   <Slide direction="up" in timeout={600 + index * 100}>
                     <Card 
+                      component={Link}
+                      to={`/products/${product.slug}`}
                       sx={{ 
                         height: '100%', 
                         display: 'flex', 
@@ -750,9 +784,12 @@ const Home = () => {
                         overflow: 'hidden',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                         transition: 'all 0.3s ease',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
                         '&:hover': { 
                           transform: 'translateY(-8px)',
-                          boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
+                          boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+                          textDecoration: 'none'
                         }
                       }}
                     >
@@ -798,19 +835,6 @@ const Home = () => {
                             }}
                           />
                         )}
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            bottom: 12,
-                            right: 12,
-                            bgcolor: alpha('#fff', 0.9),
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: 2,
-                            p: 1
-                          }}
-                        >
-                          <IconHeart size={20} color={theme.palette.text.secondary} />
-                        </Box>
                       </Box>
                       <CardContent sx={{ 
                         flexGrow: 1, 
@@ -950,6 +974,8 @@ const Home = () => {
             
             <Box textAlign="center" mt={4}>
               <Button 
+                component={Link}
+                to="/products"
                 variant="contained" 
                 size="large"
                 endIcon={<IconShoppingCart />}
@@ -1056,6 +1082,8 @@ const Home = () => {
                 <SwiperSlide key={artist.id}>
                   <Slide direction="up" in timeout={600 + index * 100}>
                     <Box 
+                      component={Link}
+                      to={`/artists/${artist.slug}`}
                       sx={{ 
                         textAlign: 'center',
                         p: 2,
@@ -1065,10 +1093,13 @@ const Home = () => {
                         borderColor: alpha(theme.palette.primary.main, 0.1),
                         transition: 'all 0.4s ease',
                         cursor: 'pointer',
+                        textDecoration: 'none',
+                        display: 'block',
                         '&:hover': { 
                           transform: 'translateY(-12px)',
                           boxShadow: `0 20px 60px ${alpha(theme.palette.primary.main, 0.15)}`,
                           borderColor: alpha(theme.palette.primary.main, 0.3),
+                          textDecoration: 'none',
                           '& .artist-avatar': {
                             transform: 'scale(1.05)',
                             boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.25)}`
@@ -1112,7 +1143,7 @@ const Home = () => {
                             border: '2px solid white'
                           }}
                         >
-                          <IconStar size={14} />
+                          <IconBookmark size={14} />
                         </Box>
                       </Box>
                       
@@ -1166,7 +1197,7 @@ const Home = () => {
                           }
                         }}
                       >
-                        View Portfolio
+                        View Profile
                       </Button>
                     </Box>
                   </Slide>

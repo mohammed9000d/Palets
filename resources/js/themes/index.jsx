@@ -7,6 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 
 // project imports
 import useConfig from 'hooks/useConfig';
+import { useThemeSettings } from 'hooks/useThemeSettings';
 import Palette from './palette';
 import Typography from './typography';
 
@@ -14,7 +15,11 @@ import componentStyleOverrides from './compStyleOverride';
 import customShadows from './shadows';
 
 export default function ThemeCustomization({ children }) {
-  const { borderRadius, fontFamily, mode, outlinedFilled, presetColor } = useConfig();
+  const { borderRadius, fontFamily, outlinedFilled, presetColor } = useConfig();
+  const { themeMode, loading } = useThemeSettings();
+  
+  // Use theme mode from settings, fallback to light mode while loading
+  const mode = loading ? 'light' : (themeMode || 'light');
 
   const theme = useMemo(() => Palette(mode, presetColor), [mode, presetColor]);
 

@@ -127,11 +127,21 @@ class CartController extends Controller
             }
 
             // Check if item already exists in cart
+            $requestOptions = $request->options ?? [];
             $existingItem = $cart->items()->where([
                 'product_id' => $request->product_id,
                 'product_type' => $request->product_type,
-                'options' => json_encode($request->options ?? [])
-            ])->first();
+            ])->get()->first(function ($item) use ($requestOptions) {
+                // Compare options by converting both to arrays and comparing
+                $itemOptions = is_string($item->options) ? json_decode($item->options, true) : $item->options;
+                $itemOptions = $itemOptions ?? [];
+                
+                // Sort both arrays by keys for consistent comparison
+                ksort($itemOptions);
+                ksort($requestOptions);
+                
+                return $itemOptions == $requestOptions;
+            });
 
             if ($existingItem) {
                 // Update quantity
@@ -403,11 +413,21 @@ class CartController extends Controller
                 ]);
 
                 // Check if item already exists in user's cart
+                $guestOptions = $guestItem['options'] ?? [];
                 $existingItem = $cart->items()->where([
                     'product_id' => $guestItem['product_id'],
                     'product_type' => $guestItem['product_type'],
-                    'options' => json_encode($guestItem['options'] ?? [])
-                ])->first();
+                ])->get()->first(function ($item) use ($guestOptions) {
+                    // Compare options by converting both to arrays and comparing
+                    $itemOptions = is_string($item->options) ? json_decode($item->options, true) : $item->options;
+                    $itemOptions = $itemOptions ?? [];
+                    
+                    // Sort both arrays by keys for consistent comparison
+                    ksort($itemOptions);
+                    ksort($guestOptions);
+                    
+                    return $itemOptions == $guestOptions;
+                });
 
                 if ($existingItem) {
                     // Update quantity

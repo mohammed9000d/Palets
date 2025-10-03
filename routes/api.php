@@ -12,6 +12,13 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ArtPanelGalleryController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TestPaymentController;
+use App\Http\Controllers\ProductReviewController;
+use App\Http\Controllers\AdminOrderController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SettingController;
 
 // Configuration endpoint for frontend
 Route::get('/config', function () {
@@ -72,7 +79,28 @@ Route::middleware(['admin.auth'])->group(function () {
 
     // News routes
     Route::apiResource('news', NewsController::class);
+
+    // Admin Orders routes
+    Route::prefix('admin-orders')->group(function () {
+        Route::get('/', [AdminOrderController::class, 'index']);
+        Route::get('/statistics', [AdminOrderController::class, 'statistics']);
+        Route::get('/{id}', [AdminOrderController::class, 'show']);
+        Route::put('/{id}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::put('/{id}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
+        Route::delete('/{id}', [AdminOrderController::class, 'destroy']);
+    });
+
+    // Dashboard routes
+    Route::get('/dashboard/statistics', [DashboardController::class, 'getStatistics']);
+    
+    // Settings routes
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [SettingController::class, 'index']);
+        Route::post('/', [SettingController::class, 'update']);
+        Route::delete('/file', [SettingController::class, 'deleteFile']);
+    });
 });
+
 
 // User Authentication routes (need session middleware for web auth)
 Route::prefix('auth')->middleware(['web'])->group(function () {
@@ -81,6 +109,7 @@ Route::prefix('auth')->middleware(['web'])->group(function () {
     Route::post('/logout', [UserAuthController::class, 'logout'])->middleware('auth:web');
     Route::get('/me', [UserAuthController::class, 'me'])->middleware('auth:web');
     Route::put('/profile', [UserAuthController::class, 'updateProfile'])->middleware('auth:web');
+    Route::post('/profile', [UserAuthController::class, 'updateProfile'])->middleware('auth:web'); // For file uploads
 });
 
 // Cart routes (available for both authenticated users and guests, need session middleware)
@@ -92,6 +121,38 @@ Route::prefix('cart')->middleware(['web'])->group(function () {
     Route::delete('/clear', [CartController::class, 'clearCart']);
     Route::post('/merge', [CartController::class, 'mergeCart'])->middleware('auth:web');
 });
+
+// Order routes (require authentication)
+Route::prefix('orders')->middleware(['web', 'auth:web'])->group(function () {
+    Route::get('/', [OrderController::class, 'index']);
+    Route::post('/', [OrderController::class, 'store']);
+    Route::get('/{id}', [OrderController::class, 'show']);
+    Route::post('/{id}/cancel', [OrderController::class, 'cancel']);
+});
+
+// Payment routes (require authentication)
+Route::prefix('payments')->middleware(['web', 'auth:web'])->group(function () {
+    Route::post('/stripe/create-intent', [PaymentController::class, 'createStripePaymentIntent']);
+    Route::post('/stripe/confirm', [PaymentController::class, 'confirmStripePayment']);
+    Route::post('/paypal/create-order', [PaymentController::class, 'createPayPalOrder']);
+    Route::post('/paypal/confirm', [PaymentController::class, 'confirmPayPalPayment']);
+    
+    // Test payment routes (for development/testing)
+    Route::post('/test/stripe', [TestPaymentController::class, 'testStripePayment']);
+    Route::post('/test/paypal', [TestPaymentController::class, 'testPayPalPayment']);
+});
+
+// Guest payment routes (available for both authenticated and guest users)
+Route::prefix('guest-payments')->middleware(['web'])->group(function () {
+    Route::post('/sync-cart', [PaymentController::class, 'syncGuestCart']);
+    Route::post('/stripe/create-intent', [PaymentController::class, 'createGuestStripePaymentIntent']);
+    Route::post('/stripe/confirm', [PaymentController::class, 'confirmGuestStripePayment']);
+    Route::post('/paypal/create-order', [PaymentController::class, 'createGuestPayPalOrder']);
+    Route::post('/paypal/confirm', [PaymentController::class, 'confirmGuestPayPalPayment']);
+});
+
+// Public settings route
+Route::get('/public/settings', [SettingController::class, 'getPublicSettings']);
 
 // Public routes for frontend (no authentication required)
 Route::prefix('public')->group(function () {
@@ -111,4 +172,72 @@ Route::prefix('public')->group(function () {
     Route::get('/galleries-artists', [ArtPanelGalleryController::class, 'getArtists']);
     Route::get('/news', [NewsController::class, 'index']);
     Route::get('/news/{id}', [NewsController::class, 'show']);
+    
+    // Debug routes for testing
+    Route::get('/debug/products', function(Request $request) {
+        $query = \App\Models\Product::with(['media', 'artist']);
+        $query->where('status', 'published');
+        
+        if ($request->has('artist_id') && $request->artist_id) {
+            $query->where('artist_id', $request->artist_id);
+        }
+        
+        $products = $query->get();
+        
+        return response()->json([
+            'debug' => true,
+            'request_params' => $request->all(),
+            'total_products' => $products->count(),
+            'products' => $products->map(function($product) {
+                return [
+                    'id' => $product->id,
+                    'main_title' => $product->main_title,
+                    'artist_id' => $product->artist_id,
+                    'artist_name' => $product->artist?->artist_name,
+                    'status' => $product->status,
+                    'cover_photo_url' => $product->cover_photo_url,
+                ];
+            })
+        ]);
+    });
+    
+    Route::get('/debug/all-products', function() {
+        $allProducts = \App\Models\Product::all();
+        $publishedProducts = \App\Models\Product::where('status', 'published')->get();
+        $artists = \App\Models\Artist::all();
+        
+        return response()->json([
+            'debug' => true,
+            'total_products' => $allProducts->count(),
+            'published_products' => $publishedProducts->count(),
+            'total_artists' => $artists->count(),
+            'all_products' => $allProducts->map(function($product) {
+                return [
+                    'id' => $product->id,
+                    'main_title' => $product->main_title,
+                    'artist_id' => $product->artist_id,
+                    'status' => $product->status,
+                ];
+            }),
+            'artists' => $artists->map(function($artist) {
+                return [
+                    'id' => $artist->id,
+                    'artist_name' => $artist->artist_name,
+                    'slug' => $artist->slug,
+                ];
+            })
+        ]);
+    });
+});
+
+// Product Reviews routes (mixed public/authenticated)
+Route::prefix('products/{productId}/reviews')->middleware(['web'])->group(function () {
+    // Public routes
+    Route::get('/', [ProductReviewController::class, 'index']);
+    
+    // Authenticated routes
+    Route::post('/', [ProductReviewController::class, 'store'])->middleware('auth:web');
+    Route::put('/{reviewId}', [ProductReviewController::class, 'update'])->middleware('auth:web');
+    Route::delete('/{reviewId}', [ProductReviewController::class, 'destroy'])->middleware('auth:web');
+    Route::get('/user', [ProductReviewController::class, 'getUserReview'])->middleware('auth:web');
 });

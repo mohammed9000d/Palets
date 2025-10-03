@@ -160,353 +160,534 @@ const ArtistProfile = () => {
   const totalProducts = products.length;
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa' }}>
-      {/* Modern Hero Section */}
-      <Box sx={{ bgcolor: 'white', position: 'relative' }}>
-        <Container maxWidth="xl">
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
+      {/* Enhanced Hero Section */}
+      <Box 
+        sx={{ 
+          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.03)} 0%, ${alpha(theme.palette.secondary.main, 0.03)} 100%)`,
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Decorative Elements */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -50,
+            right: -50,
+            width: 200,
+            height: 200,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.1)} 0%, transparent 70%)`,
+            opacity: 0.6
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: -30,
+            left: -30,
+            width: 150,
+            height: 150,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${alpha(theme.palette.secondary.main, 0.1)} 0%, transparent 70%)`,
+            opacity: 0.6
+          }}
+        />
+
+        <Container maxWidth="lg">
           {/* Back Button */}
-          <Box sx={{ pt: 3, pb: 2 }}>
+          <Box sx={{ pt: 4, pb: 3 }}>
             <Button
               component={Link}
               to="/artists"
-              startIcon={<IconArrowLeft size={16} />}
+              startIcon={<IconArrowLeft size={18} />}
               sx={{ 
                 color: theme.palette.text.secondary,
-                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) }
+                bgcolor: alpha(theme.palette.primary.main, 0.05),
+                borderRadius: 3,
+                px: 3,
+                py: 1,
+                '&:hover': { 
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  transform: 'translateX(-4px)'
+                },
+                transition: 'all 0.2s ease'
               }}
             >
               Back to Artists
             </Button>
           </Box>
 
-          {/* Unified Profile Section */}
-          <Box sx={{ py: 6 }}>
+          {/* Main Profile Card */}
+          <Box sx={{ pb: 8 }}>
             <Paper 
               sx={{ 
-                p: 6, 
-                borderRadius: 4, 
+                p: { xs: 4, md: 6 }, 
+                borderRadius: 6, 
                 bgcolor: 'white',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                boxShadow: '0 24px 48px rgba(0,0,0,0.12)',
+                border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                position: 'relative',
+                overflow: 'hidden'
               }}
             >
-              <Grid container spacing={6} alignItems="flex-start">
-                {/* Left Side - Avatar & Stats */}
-                <Grid item xs={12} md={4}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    {/* Large Avatar with Gradient Ring */}
-                    <Box sx={{ mb: 4 }}>
+              {/* Decorative Background Elements */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: '40%',
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
+                  borderRadius: '0 6px 6px 0'
+                }}
+              />
+
+              <Grid container spacing={8} alignItems="center" sx={{ position: 'relative', zIndex: 1 }}>
+                {/* Left Side - Avatar & Identity */}
+                <Grid item xs={12} md={5}>
+                  <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+                    {/* Enhanced Avatar */}
+                    <Box sx={{ mb: 4, display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
                       <Box
                         sx={{
-                          p: 1,
-                          borderRadius: '50%',
-                          background: `conic-gradient(from 0deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.success.main}, ${theme.palette.primary.main})`,
-                          display: 'inline-block',
-                          mb: 3
+                          position: 'relative',
+                          display: 'inline-block'
                         }}
                       >
+                        {/* Gradient Ring */}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: -6,
+                            left: -6,
+                            right: -6,
+                            bottom: -6,
+                            borderRadius: '50%',
+                            background: `conic-gradient(from 0deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.success.main}, ${theme.palette.primary.main})`,
+                            animation: 'rotate 8s linear infinite',
+                            '@keyframes rotate': {
+                              '0%': { transform: 'rotate(0deg)' },
+                              '100%': { transform: 'rotate(360deg)' }
+                            }
+                          }}
+                        />
                         <Avatar
                           src={artist.avatar_url || artist.avatar_thumb_url}
                           sx={{
-                            width: 180,
-                            height: 180,
+                            width: 160,
+                            height: 160,
                             border: `6px solid white`,
-                            fontSize: '3.5rem',
+                            fontSize: '3rem',
                             fontWeight: 'bold',
                             bgcolor: theme.palette.primary.main,
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+                            boxShadow: '0 16px 40px rgba(0,0,0,0.15)',
+                            position: 'relative',
+                            zIndex: 1
                           }}
                         >
                           {artist.artist_name?.charAt(0)?.toUpperCase()}
                         </Avatar>
+                        
+                        {/* Online Status Indicator */}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            bottom: 12,
+                            right: 12,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            bgcolor: theme.palette.success.main,
+                            border: `3px solid white`,
+                            zIndex: 2
+                          }}
+                        />
                       </Box>
+                    </Box>
 
-                      {/* Artist Name */}
+                    {/* Artist Name with Verified Badge */}
+                    <Box sx={{ mb: 3 }}>
                       <Typography
-                        variant="h4"
+                        variant="h3"
                         sx={{
                           fontWeight: 800,
-                          mb: 2,
+                          mb: 1,
                           color: theme.palette.text.primary,
-                          fontSize: { xs: '1.8rem', md: '2.2rem' }
+                          fontSize: { xs: '2rem', md: '2.5rem' },
+                          lineHeight: 1.2
                         }}
                       >
                         {artist.artist_name}
+                        <Box
+                          component="span"
+                          sx={{
+                            display: 'inline-block',
+                            ml: 1,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            bgcolor: theme.palette.primary.main,
+                            color: 'white',
+                            fontSize: '0.75rem',
+                            lineHeight: '24px',
+                            textAlign: 'center',
+                            verticalAlign: 'middle'
+                          }}
+                        >
+                          ✓
+                        </Box>
                       </Typography>
-
+                      
                       {/* Specialties */}
                       {artist.specialties && (
-                        <Box sx={{ mb: 4 }}>
-                          <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" gap={1}>
-                            {artist.specialties.split(',').map((specialty, index) => (
-                              <Chip
-                                key={index}
-                                label={specialty.trim()}
-                                sx={{
-                                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                  color: theme.palette.primary.main,
-                                  fontWeight: 600,
-                                  border: 'none',
-                                  '&:hover': {
-                                    bgcolor: alpha(theme.palette.primary.main, 0.2)
-                                  }
-                                }}
-                              />
-                            ))}
-                          </Stack>
-                        </Box>
+                        <Stack direction="row" spacing={1} justifyContent={{ xs: 'center', md: 'flex-start' }} flexWrap="wrap" gap={1}>
+                          {artist.specialties.split(',').slice(0, 3).map((specialty, index) => (
+                            <Chip
+                              key={index}
+                              label={specialty.trim()}
+                              size="small"
+                              sx={{
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                color: theme.palette.primary.main,
+                                fontWeight: 600,
+                                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.primary.main, 0.15),
+                                  transform: 'translateY(-2px)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            />
+                          ))}
+                        </Stack>
                       )}
                     </Box>
 
-                    {/* Stats Grid */}
+                    {/* Enhanced Stats */}
                     <Grid container spacing={2} sx={{ mb: 4 }}>
                       <Grid item xs={4}>
-                        <Box sx={{ textAlign: 'center', p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
-                          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.primary.main, mb: 0.5 }}>
+                        <Paper 
+                          elevation={0}
+                          sx={{ 
+                            textAlign: 'center', 
+                            p: 3, 
+                            borderRadius: 4, 
+                            bgcolor: alpha(theme.palette.primary.main, 0.06),
+                            border: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              transform: 'translateY(-4px)',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.1)'
+                            }
+                          }}
+                        >
+                          <Typography variant="h4" sx={{ fontWeight: 800, color: theme.palette.primary.main, mb: 1 }}>
                             {totalProducts}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
                             Artworks
                           </Typography>
-                        </Box>
+                        </Paper>
                       </Grid>
                       <Grid item xs={4}>
-                        <Box sx={{ textAlign: 'center', p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 0.05) }}>
-                          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.success.main, mb: 0.5 }}>
+                        <Paper 
+                          elevation={0}
+                          sx={{ 
+                            textAlign: 'center', 
+                            p: 3, 
+                            borderRadius: 4, 
+                            bgcolor: alpha(theme.palette.success.main, 0.06),
+                            border: `2px solid ${alpha(theme.palette.success.main, 0.1)}`,
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              transform: 'translateY(-4px)',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.1)'
+                            }
+                          }}
+                        >
+                          <Typography variant="h4" sx={{ fontWeight: 800, color: theme.palette.success.main, mb: 1 }}>
                             {forSaleProducts.length}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
                             For Sale
                           </Typography>
-                        </Box>
+                        </Paper>
                       </Grid>
                       <Grid item xs={4}>
-                        <Box sx={{ textAlign: 'center', p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.secondary.main, 0.05) }}>
-                          <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.secondary.main, mb: 0.5 }}>
-                            4.8
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        <Paper 
+                          elevation={0}
+                          sx={{ 
+                            textAlign: 'center', 
+                            p: 3, 
+                            borderRadius: 4, 
+                            bgcolor: alpha(theme.palette.secondary.main, 0.06),
+                            border: `2px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              transform: 'translateY(-4px)',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.1)'
+                            }
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                            <Typography variant="h4" sx={{ fontWeight: 800, color: theme.palette.secondary.main, mr: 0.5 }}>
+                              4.8
+                            </Typography>
+                            <IconStar size={20} color={theme.palette.secondary.main} fill={theme.palette.secondary.main} />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
                             Rating
                           </Typography>
-                        </Box>
+                        </Paper>
                       </Grid>
                     </Grid>
 
-                    {/* Quick Actions */}
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <IconButton
+                    {/* Enhanced Quick Actions */}
+                    <Stack direction="row" spacing={2} justifyContent="center">
+                      <Button
                         onClick={handleShare}
+                        variant="outlined"
+                        startIcon={<IconShare size={18} />}
                         sx={{
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          borderRadius: 3,
+                          px: 3,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          borderColor: alpha(theme.palette.primary.main, 0.3),
                           color: theme.palette.primary.main,
                           '&:hover': { 
-                            bgcolor: alpha(theme.palette.primary.main, 0.2),
-                            transform: 'scale(1.1)'
+                            bgcolor: alpha(theme.palette.primary.main, 0.05),
+                            borderColor: theme.palette.primary.main,
+                            transform: 'translateY(-2px)'
                           },
                           transition: 'all 0.2s ease'
                         }}
                       >
-                        <IconShare size={20} />
-                      </IconButton>
+                        Share
+                      </Button>
                       
                       {artist.contact_email && (
-                        <IconButton
+                        <Button
                           href={`mailto:${artist.contact_email}`}
+                          variant="contained"
+                          startIcon={<IconMail size={18} />}
                           sx={{
-                            bgcolor: alpha(theme.palette.success.main, 0.1),
-                            color: theme.palette.success.main,
+                            bgcolor: theme.palette.primary.main,
+                            borderRadius: 3,
+                            px: 3,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
                             '&:hover': { 
-                              bgcolor: alpha(theme.palette.success.main, 0.2),
-                              transform: 'scale(1.1)'
+                              bgcolor: theme.palette.primary.dark,
+                              transform: 'translateY(-2px)',
+                              boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.4)}`
                             },
                             transition: 'all 0.2s ease'
                           }}
                         >
-                          <IconMail size={20} />
-                        </IconButton>
+                          Contact
+                        </Button>
                       )}
-                      
-                      {artist.social_links && Object.entries(artist.social_links).slice(0, 2).map(([platform, url]) => {
-                        const IconComponent = getSocialIcon(platform);
-                        return url ? (
-                          <IconButton
-                            key={platform}
-                            href={url}
-                            target="_blank"
-                            sx={{
-                              bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                              color: theme.palette.secondary.main,
-                              '&:hover': {
-                                bgcolor: alpha(theme.palette.secondary.main, 0.2),
-                                transform: 'scale(1.1)'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            <IconComponent size={20} />
-                          </IconButton>
-                        ) : null;
-                      })}
                     </Stack>
                   </Box>
                 </Grid>
 
-                {/* Right Side - Bio & Contact */}
-                <Grid item xs={12} md={8}>
-                  <Box>
-                    {/* About Section */}
-                    <Box sx={{ mb: 4 }}>
-                      <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, color: theme.palette.primary.main }}>
-                        About {artist.artist_name}
-                      </Typography>
+                {/* Right Side - Enhanced Bio & Contact */}
+                <Grid item xs={12} md={7}>
+                  <Box sx={{ pl: { xs: 0, md: 4 } }}>
+                    {/* Enhanced About Section */}
+                    <Box sx={{ mb: 5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                        <Box
+                          sx={{
+                            width: 4,
+                            height: 32,
+                            bgcolor: theme.palette.primary.main,
+                            borderRadius: 2
+                          }}
+                        />
+                        <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+                          About {artist.artist_name}
+                        </Typography>
+                      </Box>
+                      
                       <Typography
                         variant="body1"
                         sx={{
                           lineHeight: 1.8,
                           color: theme.palette.text.primary,
-                          fontSize: '1.1rem',
-                          mb: 4
+                          fontSize: '1.2rem',
+                          mb: 4,
+                          position: 'relative',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            left: -20,
+                            top: 8,
+                            width: 3,
+                            height: 3,
+                            borderRadius: '50%',
+                            bgcolor: theme.palette.primary.main
+                          }
                         }}
                       >
                         {artist.bio || 'This talented artist creates unique and inspiring works that captivate audiences with their distinctive style and creative vision.'}
                       </Typography>
                     </Box>
 
-                    {/* Contact & Social */}
-                    <Grid container spacing={4}>
-                      {/* Contact Info */}
-                      <Grid item xs={12} md={6}>
+                    {/* Contact Information */}
+                    {(artist.contact_email || artist.phone || artist.link) && (
+                      <Box sx={{ mb: 4 }}>
                         <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: theme.palette.text.primary }}>
-                          Get in Touch
+                          Connect
                         </Typography>
                         <Stack spacing={2}>
                           {artist.contact_email && (
-                            <Button
-                              startIcon={<IconMail size={18} />}
-                              href={`mailto:${artist.contact_email}`}
-                              variant="outlined"
-                              fullWidth
-                              sx={{ 
-                                justifyContent: 'flex-start',
-                                textTransform: 'none',
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
                                 borderRadius: 3,
-                                py: 1.5
+                                bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                  transform: 'translateY(-2px)'
+                                }
                               }}
                             >
-                              {artist.contact_email}
-                            </Button>
-                          )}
-                          {artist.phone && (
-                            <Button
-                              startIcon={<IconPhone size={18} />}
-                              href={`tel:${artist.phone}`}
-                              variant="outlined"
-                              fullWidth
-                              sx={{ 
-                                justifyContent: 'flex-start',
-                                textTransform: 'none',
-                                borderRadius: 3,
-                                py: 1.5
-                              }}
-                            >
-                              {artist.phone}
-                            </Button>
-                          )}
-                          {artist.link && (
-                            <Button
-                              startIcon={<IconWorld size={18} />}
-                              href={artist.link}
-                              target="_blank"
-                              variant="outlined"
-                              fullWidth
-                              sx={{ 
-                                justifyContent: 'flex-start',
-                                textTransform: 'none',
-                                borderRadius: 3,
-                                py: 1.5
-                              }}
-                            >
-                              Visit Website
-                            </Button>
-                          )}
-                        </Stack>
-                      </Grid>
-
-                      {/* Social Links */}
-                      <Grid item xs={12} md={6}>
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: theme.palette.text.primary }}>
-                          Follow on Social
-                        </Typography>
-                        <Stack direction="row" spacing={2} flexWrap="wrap" gap={1}>
-                          {artist.social_links && Object.entries(artist.social_links).map(([platform, url]) => {
-                            const IconComponent = getSocialIcon(platform);
-                            return url ? (
                               <Button
-                                key={platform}
-                                href={url}
-                                target="_blank"
-                                variant="outlined"
-                                startIcon={<IconComponent size={18} />}
-                                sx={{
-                                  textTransform: 'capitalize',
-                                  borderRadius: 3,
-                                  '&:hover': {
-                                    transform: 'translateY(-2px)'
-                                  },
-                                  transition: 'all 0.2s ease'
+                                startIcon={<IconMail size={20} />}
+                                href={`mailto:${artist.contact_email}`}
+                                fullWidth
+                                sx={{ 
+                                  justifyContent: 'flex-start',
+                                  textTransform: 'none',
+                                  color: theme.palette.text.primary,
+                                  fontWeight: 600,
+                                  py: 1
                                 }}
                               >
-                                {platform}
+                                {artist.contact_email}
                               </Button>
+                            </Paper>
+                          )}
+                          {artist.phone && (
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                borderRadius: 3,
+                                bgcolor: alpha(theme.palette.success.main, 0.04),
+                                border: `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.success.main, 0.08),
+                                  transform: 'translateY(-2px)'
+                                }
+                              }}
+                            >
+                              <Button
+                                startIcon={<IconPhone size={20} />}
+                                href={`tel:${artist.phone}`}
+                                fullWidth
+                                sx={{ 
+                                  justifyContent: 'flex-start',
+                                  textTransform: 'none',
+                                  color: theme.palette.text.primary,
+                                  fontWeight: 600,
+                                  py: 1
+                                }}
+                              >
+                                {artist.phone}
+                              </Button>
+                            </Paper>
+                          )}
+                          {artist.link && (
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                borderRadius: 3,
+                                bgcolor: alpha(theme.palette.secondary.main, 0.04),
+                                border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.secondary.main, 0.08),
+                                  transform: 'translateY(-2px)'
+                                }
+                              }}
+                            >
+                              <Button
+                                startIcon={<IconWorld size={20} />}
+                                href={artist.link}
+                                target="_blank"
+                                fullWidth
+                                sx={{ 
+                                  justifyContent: 'flex-start',
+                                  textTransform: 'none',
+                                  color: theme.palette.text.primary,
+                                  fontWeight: 600,
+                                  py: 1
+                                }}
+                              >
+                                Visit Website
+                              </Button>
+                            </Paper>
+                          )}
+                        </Stack>
+                      </Box>
+                    )}
+
+                    {/* Social Media */}
+                    {artist.social_links && Object.keys(artist.social_links).length > 0 && (
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, color: theme.palette.text.primary }}>
+                          Social Media
+                        </Typography>
+                        <Grid container spacing={2}>
+                          {Object.entries(artist.social_links).map(([platform, url]) => {
+                            const IconComponent = getSocialIcon(platform);
+                            return url ? (
+                              <Grid item xs={6} sm={4} key={platform}>
+                                <Paper
+                                  elevation={0}
+                                  sx={{
+                                    p: 2,
+                                    borderRadius: 3,
+                                    bgcolor: alpha(theme.palette.secondary.main, 0.04),
+                                    border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                      bgcolor: alpha(theme.palette.secondary.main, 0.08),
+                                      transform: 'translateY(-2px)'
+                                    }
+                                  }}
+                                >
+                                  <Button
+                                    href={url}
+                                    target="_blank"
+                                    fullWidth
+                                    startIcon={<IconComponent size={20} />}
+                                    sx={{
+                                      textTransform: 'capitalize',
+                                      color: theme.palette.text.primary,
+                                      fontWeight: 600,
+                                      justifyContent: 'flex-start'
+                                    }}
+                                  >
+                                    {platform}
+                                  </Button>
+                                </Paper>
+                              </Grid>
                             ) : null;
                           })}
-                        </Stack>
-                      </Grid>
-                    </Grid>
-
-                    {/* Commission Info */}
-                    {artist.commission_rate && (
-                      <Box sx={{ mt: 4 }}>
-                        <Paper sx={{ 
-                          p: 4,
-                          borderRadius: 3,
-                          background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.05)}, ${alpha(theme.palette.success.light, 0.1)})`,
-                          border: `2px solid ${alpha(theme.palette.success.main, 0.2)}`
-                        }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                            <Box sx={{
-                              p: 1.5,
-                              borderRadius: '50%',
-                              bgcolor: alpha(theme.palette.success.main, 0.1)
-                            }}>
-                              <IconPalette size={24} color={theme.palette.success.main} />
-                            </Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.success.main }}>
-                              Custom Commissions Available
-                            </Typography>
-                          </Box>
-                          <Typography variant="body1" sx={{ mb: 2, color: theme.palette.text.primary }}>
-                            Starting at <strong>${artist.commission_rate}</strong>
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                            Contact the artist for custom artwork commissions and personalized pieces.
-                          </Typography>
-                          <Button
-                            variant="contained"
-                            size="large"
-                            href={`mailto:${artist.contact_email}?subject=Commission Inquiry`}
-                            sx={{
-                              bgcolor: theme.palette.success.main,
-                              textTransform: 'none',
-                              borderRadius: 3,
-                              px: 4,
-                              py: 1.5,
-                              fontWeight: 600
-                            }}
-                          >
-                            Request Commission
-                          </Button>
-                        </Paper>
+                        </Grid>
                       </Box>
                     )}
                   </Box>

@@ -31,10 +31,13 @@ const AddToCartButton = ({
 }) => {
   const theme = useTheme();
   const { addToCart, loading } = useCart();
-  const [quantity, setQuantity] = useState(initialQuantity);
+  const [internalQuantity, setInternalQuantity] = useState(initialQuantity);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+
+  // Use internal quantity only when showing quantity controls, otherwise use prop
+  const quantity = showQuantityControls ? internalQuantity : initialQuantity;
 
   const handleAddToCart = async () => {
     if (!product || disabled) return;
@@ -47,8 +50,10 @@ const AddToCartButton = ({
       
       if (result.success) {
         setShowSuccess(true);
-        // Reset quantity to 1 after successful add
-        setQuantity(1);
+        // Reset internal quantity to 1 after successful add (only when using internal controls)
+        if (showQuantityControls) {
+          setInternalQuantity(1);
+        }
       } else {
         setError(result.message || 'Failed to add to cart');
       }
@@ -60,11 +65,11 @@ const AddToCartButton = ({
   };
 
   const incrementQuantity = () => {
-    setQuantity(prev => Math.min(prev + 1, 10));
+    setInternalQuantity(prev => Math.min(prev + 1, 10));
   };
 
   const decrementQuantity = () => {
-    setQuantity(prev => Math.max(prev - 1, 1));
+    setInternalQuantity(prev => Math.max(prev - 1, 1));
   };
 
   const handleCloseSnackbar = () => {
@@ -103,7 +108,7 @@ const AddToCartButton = ({
               <IconButton
                 size="small"
                 onClick={decrementQuantity}
-                disabled={quantity <= 1 || isDisabled}
+                disabled={internalQuantity <= 1 || isDisabled}
                 sx={{ borderRadius: 0, px: 2 }}
               >
                 <IconMinus size={16} />
@@ -117,12 +122,12 @@ const AddToCartButton = ({
                 borderRight: `1px solid ${theme.palette.divider}`,
                 fontWeight: 600
               }}>
-                {quantity}
+                {internalQuantity}
               </Typography>
               <IconButton
                 size="small"
                 onClick={incrementQuantity}
-                disabled={quantity >= 10 || isDisabled}
+                disabled={internalQuantity >= 10 || isDisabled}
                 sx={{ borderRadius: 0, px: 2 }}
               >
                 <IconPlus size={16} />

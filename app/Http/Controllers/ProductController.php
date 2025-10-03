@@ -21,7 +21,6 @@ class ProductController extends Controller
         if ($request->is('api/public/*')) {
             $query->where('status', 'published');
         }
-
         // Search functionality
         if ($request->has('search') && $request->search) {
             $query->search($request->search);
@@ -37,8 +36,10 @@ class ProductController extends Controller
             $query->where('in_stock', $request->boolean('in_stock'));
         }
 
-
-
+        // Filter by artist
+        if ($request->has('artist_id') && $request->artist_id) {
+            $query->where('artist_id', $request->artist_id);
+        }
         // Filter by price range
         if ($request->has('min_price') || $request->has('max_price')) {
             $minPrice = $request->get('min_price', 0);
@@ -63,6 +64,7 @@ class ProductController extends Controller
 
         // Pagination
         $perPage = $request->get('per_page', 15);
+        
         $products = $query->paginate($perPage);
 
         // Transform data to include media URLs and computed attributes
@@ -156,7 +158,7 @@ class ProductController extends Controller
             ], 404);
         }
         
-        $product->load(['media', 'artist']);
+        $product->load(['media', 'artist', 'reviews']);
         
         // Increment view count
         $product->incrementViews();
@@ -366,7 +368,12 @@ class ProductController extends Controller
             'updated_at' => $product->updated_at,
         ];
 
-
+        // Add review statistics if including details
+        if ($includeDetails) {
+            $data['average_rating'] = $product->average_rating;
+            $data['reviews_count'] = $product->reviews_count;
+            $data['rating_stats'] = $product->rating_stats;
+        }
 
         return $data;
     }

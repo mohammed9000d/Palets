@@ -2,7 +2,11 @@
 <html lang="en">
   <head>
     <title>Palets - Art Gallery Platform</title>
+    <!-- Default favicon - will be replaced by JavaScript if custom favicon is set -->
     <link rel="icon" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    
     <!-- Meta Tags-->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -19,22 +23,11 @@
     <meta name="author" content="Palets" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    @vite(['resources/css/app.css'])
-    @if (app()->environment('local'))
-        <script type="module">
-            // Fix for @vitejs/plugin-react preamble detection issue
-            if (typeof window !== 'undefined') {
-                window.__vite_plugin_react_preamble_installed__ = true;
-                window.$RefreshReg$ = () => {};
-                window.$RefreshSig$ = () => (type) => type;
-            }
-        </script>
-    @endif
+    @vite('resources/css/app.css')
+    @vite('resources/js/index.jsx')
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    
-    @vite(['resources/js/index.jsx'])
   </body>
 </html>

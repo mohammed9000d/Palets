@@ -75,6 +75,14 @@ class Product extends Model implements HasMedia
     }
 
     /**
+     * Get the order items for the product.
+     */
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
      * Define media collections
      */
     public function registerMediaCollections(): void
@@ -245,5 +253,42 @@ class Product extends Model implements HasMedia
     public function decrementLikes()
     {
         $this->decrement('like_count');
+    }
+
+    /**
+     * Get all reviews for this product
+     */
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    /**
+     * Get average rating for this product
+     */
+    public function getAverageRatingAttribute()
+    {
+        $average = $this->reviews()->avg('rating');
+        return $average ? (float) $average : 0.0;
+    }
+
+    /**
+     * Get total reviews count
+     */
+    public function getReviewsCountAttribute()
+    {
+        return $this->reviews()->count();
+    }
+
+    /**
+     * Get rating statistics (count for each rating 1-5)
+     */
+    public function getRatingStatsAttribute()
+    {
+        $stats = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $stats[$i] = $this->reviews()->where('rating', $i)->count();
+        }
+        return $stats;
     }
 }

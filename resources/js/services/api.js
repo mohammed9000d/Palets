@@ -312,6 +312,33 @@ export const galleriesAPI = {
   getArtists: () => api.get('/galleries-artists'),
 };
 
+// Orders API endpoints (Admin)
+export const ordersAPI = {
+  // Get all orders
+  getAll: (params = {}) => api.get('/admin-orders', { params }),
+  
+  // Get single order
+  getById: (id) => api.get(`/admin-orders/${id}`),
+  
+  // Get order statistics
+  getStatistics: () => api.get('/admin-orders/statistics'),
+  
+  // Update order status
+  updateStatus: (id, data) => api.put(`/admin-orders/${id}/status`, data),
+  
+  // Update payment status
+  updatePaymentStatus: (id, data) => api.put(`/admin-orders/${id}/payment-status`, data),
+  
+  // Delete order
+  delete: (id) => api.delete(`/admin-orders/${id}`),
+};
+
+// Dashboard API endpoints
+export const dashboardAPI = {
+  // Get comprehensive dashboard statistics
+  getStatistics: () => api.get('/dashboard/statistics'),
+};
+
 // News API endpoints
 export const newsApi = {
   // Get all news
@@ -448,6 +475,56 @@ export const publicNewsAPI = {
   getById: (id) => {
     const baseUrl = getApiBaseUrl();
     return axios.get(`${baseUrl}/public/news/${id}`);
+  }
+};
+
+// Product Reviews API endpoints
+export const productReviewsAPI = {
+  // Get reviews for a product (public)
+  getReviews: (productId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const baseUrl = getApiBaseUrl();
+    return axios.get(`${baseUrl}/products/${productId}/reviews${queryString ? `?${queryString}` : ''}`, {
+      withCredentials: true
+    });
+  },
+
+  // Get user's review for a product (authenticated)
+  getUserReview: (productId) => {
+    const baseUrl = getApiBaseUrl();
+    return axios.get(`${baseUrl}/products/${productId}/reviews/user`, {
+      withCredentials: true
+    });
+  },
+
+  // Add a new review (authenticated)
+  addReview: (productId, reviewData) => {
+    const baseUrl = getApiBaseUrl();
+    return axios.post(`${baseUrl}/products/${productId}/reviews`, reviewData, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  },
+
+  // Update a review (authenticated)
+  updateReview: (productId, reviewId, reviewData) => {
+    const baseUrl = getApiBaseUrl();
+    return axios.put(`${baseUrl}/products/${productId}/reviews/${reviewId}`, reviewData, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  },
+
+  // Delete a review (authenticated)
+  deleteReview: (productId, reviewId) => {
+    const baseUrl = getApiBaseUrl();
+    return axios.delete(`${baseUrl}/products/${productId}/reviews/${reviewId}`, {
+      withCredentials: true
+    });
   }
 };
 
