@@ -14,7 +14,6 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\TestPaymentController;
 use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\AdminOrderController;
 use App\Http\Controllers\DashboardController;
@@ -137,9 +136,6 @@ Route::prefix('payments')->middleware(['web', 'auth:web'])->group(function () {
     Route::post('/paypal/create-order', [PaymentController::class, 'createPayPalOrder']);
     Route::post('/paypal/confirm', [PaymentController::class, 'confirmPayPalPayment']);
     
-    // Test payment routes (for development/testing)
-    Route::post('/test/stripe', [TestPaymentController::class, 'testStripePayment']);
-    Route::post('/test/paypal', [TestPaymentController::class, 'testPayPalPayment']);
 });
 
 // Guest payment routes (available for both authenticated and guest users)
