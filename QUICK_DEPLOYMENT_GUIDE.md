@@ -39,8 +39,8 @@ EXIT;
 ```bash
 # Clone project (replace YOUR_USERNAME with your GitHub username)
 cd /var/www
-git clone https://github.com/YOUR_USERNAME/your-repo-name.git palets-ecommerce
-cd palets-ecommerce
+git clone https://github.com/YOUR_USERNAME/Palets.git Palets
+cd Palets
 
 # Set up environment
 cp env.production.example .env
@@ -73,11 +73,11 @@ php artisan db:seed --class=SettingsSeeder
 php artisan config:cache
 
 # Set permissions
-chown -R www-data:www-data /var/www/palets-ecommerce
-chmod -R 755 /var/www/palets-ecommerce
-chmod -R 775 /var/www/palets-ecommerce/storage
-chmod -R 775 /var/www/palets-ecommerce/bootstrap/cache
-chmod +x /var/www/palets-ecommerce/deploy.sh
+chown -R www-data:www-data /var/www/Palets
+chmod -R 755 /var/www/Palets
+chmod -R 775 /var/www/Palets/storage
+chmod -R 775 /var/www/Palets/bootstrap/cache
+chmod +x /var/www/Palets/deploy.sh
 
 # Configure Nginx
 nano /etc/nginx/sites-available/palets
@@ -88,7 +88,7 @@ Add this to Nginx config:
 server {
     listen 80;
     server_name 143.110.167.79;
-    root /var/www/palets-ecommerce/public;
+    root /var/www/Palets/public;
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
     index index.php index.html;
@@ -158,7 +158,7 @@ systemctl enable mysql
 ssh root@143.110.167.79
 
 # Run deployment
-cd /var/www/palets-ecommerce
+cd /var/www/Palets
 ./deploy.sh
 ```
 
@@ -172,7 +172,7 @@ cd /var/www/palets-ecommerce
 ### Check what's running on server:
 ```bash
 ssh root@143.110.167.79
-cd /var/www/palets-ecommerce
+cd /var/www/Palets
 git log -1  # See current version
 ```
 
@@ -192,7 +192,7 @@ Open browser: `http://143.110.167.79`
 ### Deployment failed?
 ```bash
 ssh root@143.110.167.79
-cd /var/www/palets-ecommerce
+cd /var/www/Palets
 
 # Fix permissions
 chown -R www-data:www-data .
