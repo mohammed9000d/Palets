@@ -12,7 +12,7 @@
 
 ### ✅ **GitHub Setup**
 - [ ] Create GitHub account at [github.com](https://github.com)
-- [ ] Create new repository: `palets-ecommerce`
+- [ ] Create new repository: `Palets`
 - [ ] Upload your Palets project to GitHub
 - [ ] Verify `.env` is in `.gitignore` (don't upload secrets!)
 
@@ -90,14 +90,14 @@ EXIT;
 ### ✅ **Clone & Setup**
 ```bash
 cd /var/www
-git clone https://github.com/YOUR_USERNAME/palets-ecommerce.git
-cd palets-ecommerce
+git clone https://github.com/YOUR_USERNAME/Palets.git Palets
+cd Palets
 
 # Set permissions
-chown -R www-data:www-data /var/www/palets-ecommerce
-chmod -R 755 /var/www/palets-ecommerce
-chmod -R 775 /var/www/palets-ecommerce/storage
-chmod -R 775 /var/www/palets-ecommerce/bootstrap/cache
+chown -R www-data:www-data /var/www/Palets
+chmod -R 755 /var/www/Palets
+chmod -R 775 /var/www/Palets/storage
+chmod -R 775 /var/www/Palets/bootstrap/cache
 
 # Install dependencies
 composer install --optimize-autoloader --no-dev

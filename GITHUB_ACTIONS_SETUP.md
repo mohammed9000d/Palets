@@ -117,10 +117,10 @@ EXIT;
 cd /var/www
 
 # Clone your repository (replace with your actual repo URL)
-git clone https://github.com/YOUR_USERNAME/palets-ecommerce.git
+git clone https://github.com/YOUR_USERNAME/Palets.git
 
 # Navigate to project
-cd palets-ecommerce
+cd Palets
 
 # Set up .env file
 cp env.production.example .env
@@ -177,10 +177,10 @@ php artisan view:cache
 php artisan optimize
 
 # Set permissions
-chown -R www-data:www-data /var/www/palets-ecommerce
-chmod -R 755 /var/www/palets-ecommerce
-chmod -R 775 /var/www/palets-ecommerce/storage
-chmod -R 775 /var/www/palets-ecommerce/bootstrap/cache
+chown -R www-data:www-data /var/www/Palets
+chmod -R 755 /var/www/Palets
+chmod -R 775 /var/www/Palets/storage
+chmod -R 775 /var/www/Palets/bootstrap/cache
 ```
 
 ### 2.6 Configure Nginx
@@ -195,7 +195,7 @@ Add this configuration:
 server {
     listen 80;
     server_name 143.110.167.79;
-    root /var/www/palets-ecommerce/public;
+    root /var/www/Palets/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
@@ -250,7 +250,7 @@ systemctl enable mysql
 ### 2.7 Make Deployment Script Executable
 
 ```bash
-chmod +x /var/www/palets-ecommerce/deploy.sh
+chmod +x /var/www/Palets/deploy.sh
 ```
 
 ---
@@ -298,7 +298,7 @@ Now that everything is set up, you can trigger deployments by publishing release
 ssh root@143.110.167.79
 
 # Check current version
-cd /var/www/palets-ecommerce
+cd /var/www/Palets
 git log -1 --pretty=format:"%h - %s (%cr) <%an>"
 
 # View application logs
@@ -319,7 +319,7 @@ If you need to deploy manually without creating a release:
 ssh root@143.110.167.79
 
 # Run deployment script
-cd /var/www/palets-ecommerce
+cd /var/www/Palets
 ./deploy.sh
 ```
 
@@ -343,12 +343,12 @@ cd /var/www/palets-ecommerce
 
    **Git Pull Failed**:
    - Make sure the repository is cloned on the server
-   - Check if `/var/www/palets-ecommerce` exists
+   - Check if `/var/www/Palets` exists
    - Verify git remote is set up correctly
 
    **Permission Denied**:
-   - Run: `chown -R www-data:www-data /var/www/palets-ecommerce`
-   - Run: `chmod -R 775 /var/www/palets-ecommerce/storage`
+   - Run: `chown -R www-data:www-data /var/www/Palets`
+   - Run: `chmod -R 775 /var/www/Palets/storage`
 
    **Database Migration Failed**:
    - Check database credentials in `.env`
@@ -363,7 +363,7 @@ cd /var/www/palets-ecommerce
 3. **View Server Logs**:
    ```bash
    # Laravel logs
-   tail -f /var/www/palets-ecommerce/storage/logs/laravel.log
+   tail -f /var/www/Palets/storage/logs/laravel.log
    
    # Nginx error logs
    tail -f /var/log/nginx/error.log

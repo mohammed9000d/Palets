@@ -34,7 +34,7 @@
 
 ## 1.2 Create Repository for Your Project
 1. Click **"New repository"** (green button)
-2. **Repository name**: `palets-ecommerce`
+2. **Repository name**: `Palets`
 3. **Description**: `Palets Art E-commerce Platform`
 4. Set to **Public** (free) or **Private** (if you have paid plan)
 5. ✅ Check **"Add a README file"**
@@ -46,7 +46,7 @@
 1. Download [GitHub Desktop](https://desktop.github.com/)
 2. Install and sign in with your GitHub account
 3. Click **"Clone a repository from the Internet"**
-4. Select your `palets-ecommerce` repository
+4. Select your `Palets` repository
 5. Choose where to save it on your computer
 6. Copy all your Palets project files into this folder
 7. In GitHub Desktop, you'll see all files listed
@@ -63,7 +63,7 @@ cd "C:\Users\moham\Desktop\personal projects\Palets"
 git init
 
 # Add GitHub repository as remote
-git remote add origin https://github.com/YOUR_USERNAME/palets-ecommerce.git
+git remote add origin https://github.com/YOUR_USERNAME/Palets.git
 
 # Add all files
 git add .
@@ -212,14 +212,14 @@ EXIT;
 cd /var/www
 
 # Clone your repository
-git clone https://github.com/YOUR_USERNAME/palets-ecommerce.git
-cd palets-ecommerce
+git clone https://github.com/YOUR_USERNAME/Palets.git Palets
+cd Palets
 
 # Set proper permissions
-chown -R www-data:www-data /var/www/palets-ecommerce
-chmod -R 755 /var/www/palets-ecommerce
-chmod -R 775 /var/www/palets-ecommerce/storage
-chmod -R 775 /var/www/palets-ecommerce/bootstrap/cache
+chown -R www-data:www-data /var/www/Palets
+chmod -R 755 /var/www/Palets
+chmod -R 775 /var/www/Palets/storage
+chmod -R 775 /var/www/Palets/bootstrap/cache
 ```
 
 ## 5.2 Install PHP Dependencies
@@ -308,7 +308,7 @@ nano /etc/nginx/sites-available/palets
 server {
     listen 80;
     server_name YOUR_SERVER_IP;
-    root /var/www/palets-ecommerce/public;
+    root /var/www/Palets/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
@@ -473,7 +473,7 @@ nano /var/www/deploy.sh
 echo "🚀 Starting deployment..."
 
 # Navigate to project directory
-cd /var/www/palets-ecommerce
+cd /var/www/Palets
 
 # Pull latest changes from GitHub
 git pull origin main
@@ -491,10 +491,10 @@ php artisan view:cache
 php artisan optimize
 
 # Set permissions
-chown -R www-data:www-data /var/www/palets-ecommerce
-chmod -R 755 /var/www/palets-ecommerce
-chmod -R 775 /var/www/palets-ecommerce/storage
-chmod -R 775 /var/www/palets-ecommerce/bootstrap/cache
+chown -R www-data:www-data /var/www/Palets
+chmod -R 755 /var/www/Palets
+chmod -R 775 /var/www/Palets/storage
+chmod -R 775 /var/www/Palets/bootstrap/cache
 
 # Restart services
 systemctl restart nginx
@@ -527,7 +527,7 @@ git push origin main
 ## 11.1 Update Environment for Domain
 ```bash
 # Edit .env file
-nano /var/www/palets-ecommerce/.env
+nano /var/www/Palets/.env
 ```
 
 **Update these lines:**
@@ -539,7 +539,7 @@ SESSION_DOMAIN=.yourdomain.com
 
 ## 11.2 Clear Caches
 ```bash
-cd /var/www/palets-ecommerce
+cd /var/www/Palets
 php artisan config:cache
 php artisan route:cache
 systemctl restart nginx
@@ -571,7 +571,7 @@ systemctl restart nginx
 
 ### **To Monitor Your Website:**
 - **DigitalOcean Dashboard**: Monitor server resources
-- **Error Logs**: `tail -f /var/www/palets-ecommerce/storage/logs/laravel.log`
+- **Error Logs**: `tail -f /var/www/Palets/storage/logs/laravel.log`
 - **Nginx Logs**: `tail -f /var/log/nginx/error.log`
 
 ### **To Backup Your Website:**
@@ -580,7 +580,7 @@ systemctl restart nginx
 mysqldump -u palets_user -p palets_production > backup.sql
 
 # Backup files
-tar -czf website-backup.tar.gz /var/www/palets-ecommerce
+tar -czf website-backup.tar.gz /var/www/Palets
 ```
 
 ---
@@ -611,10 +611,10 @@ mysql -u palets_user -p palets_production
 ## **Permission Issues:**
 ```bash
 # Fix permissions
-chown -R www-data:www-data /var/www/palets-ecommerce
-chmod -R 755 /var/www/palets-ecommerce
-chmod -R 775 /var/www/palets-ecommerce/storage
-chmod -R 775 /var/www/palets-ecommerce/bootstrap/cache
+chown -R www-data:www-data /var/www/Palets
+chmod -R 755 /var/www/Palets
+chmod -R 775 /var/www/Palets/storage
+chmod -R 775 /var/www/Palets/bootstrap/cache
 ```
 
 ---

@@ -23,7 +23,7 @@ jobs:
             echo "🚀 Starting deployment..."
             
             # Navigate to project directory
-            cd /var/www/palets-ecommerce || { echo "❌ Project directory not found!"; exit 1; }
+            cd /var/www/Palets || { echo "❌ Project directory not found!"; exit 1; }
             
             # Store current branch
             CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -61,10 +61,10 @@ jobs:
             
             # Set proper permissions
             echo "🔒 Setting permissions..."
-            chown -R www-data:www-data /var/www/palets-ecommerce
-            chmod -R 755 /var/www/palets-ecommerce
-            chmod -R 775 /var/www/palets-ecommerce/storage
-            chmod -R 775 /var/www/palets-ecommerce/bootstrap/cache
+            chown -R www-data:www-data /var/www/Palets
+            chmod -R 755 /var/www/Palets
+            chmod -R 775 /var/www/Palets/storage
+            chmod -R 775 /var/www/Palets/bootstrap/cache
             
             # Restart services
             echo "♻️ Restarting services..."
