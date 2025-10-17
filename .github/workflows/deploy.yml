@@ -1,0 +1,87 @@
+name: Deploy to Production Server
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
+            cd /var/www/palets-ecommerce || { echo "❌ Project directory not found!"; exit 1; }
+            
+            # Store current branch
+            CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+            echo "📍 Current branch: $CURRENT_BRANCH"
+            
+            # Pull latest changes
+            echo "📥 Pulling latest changes..."
+            git fetch --all
+            git pull origin main || git pull origin master
+            
+            # Install PHP dependencies
+            echo "📦 Installing PHP dependencies..."
+            composer install --optimize-autoloader --no-dev --no-interaction
+            
+            # Install Node dependencies and build assets
+            echo "🔨 Building frontend assets..."
+            npm install --production
+            npm run build
+            
+            # Run database migrations
+            echo "🗄️ Running database migrations..."
+            php artisan migrate --force
+            
+            # Clear and cache configurations
+            echo "🔄 Optimizing application..."
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+            
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan optimize
+            
+            # Set proper permissions
+            echo "🔒 Setting permissions..."
+            chown -R www-data:www-data /var/www/palets-ecommerce
+            chmod -R 755 /var/www/palets-ecommerce
+            chmod -R 775 /var/www/palets-ecommerce/storage
+            chmod -R 775 /var/www/palets-ecommerce/bootstrap/cache
+            
+            # Restart services
+            echo "♻️ Restarting services..."
+            systemctl restart php8.2-fpm
+            systemctl restart nginx
+            
+            # Clear any opcache if enabled
+            php artisan opcache:clear 2>/dev/null || echo "ℹ️ OPcache not enabled or command not available"
+            
+            echo "✅ Deployment completed successfully!"
+            echo "🎉 Application is now running the latest version!"
+
+      - name: Deployment Notification
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment to production was successful!"
+          else
+            echo "❌ Deployment to production failed!"
+          fi
