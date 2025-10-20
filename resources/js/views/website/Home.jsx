@@ -36,8 +36,7 @@ import {
   IconStar,
   IconTrendingUp,
   IconAward,
-  IconHeart,
-  IconBookmark
+  IconHeart
 } from '@tabler/icons-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay, EffectFade, Parallax } from 'swiper/modules';
@@ -303,6 +302,8 @@ const Home = () => {
                           
                           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Button 
+            component={Link}
+            to={`/galleries/${gallery.slug}`}
             variant="contained" 
                               size="large"
                               endIcon={<IconArrowRight />}
@@ -325,30 +326,6 @@ const Home = () => {
                               }}
                             >
                               Explore Exhibition
-                            </Button>
-                            <Button
-                              variant="outlined"
-            size="large"
-                              endIcon={<IconEye />}
-                              sx={{ 
-                                borderColor: 'white',
-                                color: 'white',
-                                fontWeight: 600,
-                                px: 4,
-                                py: 1.5,
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                fontSize: '1rem',
-                                borderWidth: 2,
-                                '&:hover': { 
-                                  bgcolor: alpha('#ffffff', 0.1),
-                                  borderColor: 'white',
-                                  transform: 'translateY(-2px)'
-                                },
-                                transition: 'all 0.3s ease'
-                              }}
-                            >
-                              View Details
                             </Button>
                           </Stack>
                         </Box>
@@ -725,7 +702,7 @@ const Home = () => {
         {loading ? (
           <Grid container spacing={4}>
             {[...Array(4)].map((_, index) => (
-              <Grid item xs={12} sm={6} lg={3} key={index}>
+              <Grid item xs={12} sm={6} md={6} lg={3} key={index}>
                 <Card sx={{ height: 420 }}>
                   <Skeleton variant="rectangular" height={280} />
                   <CardContent>
@@ -739,45 +716,23 @@ const Home = () => {
           </Grid>
         ) : (
           <>
-            <Box sx={{
-              '& .swiper': {
-                '& .swiper-wrapper': {
-                  alignItems: 'stretch' // Make all slides same height
-                },
-                '& .swiper-slide': {
-                  height: 'auto',
-                  display: 'flex !important',
-                  '& > div': {
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }
+            <Box 
+              sx={{ 
+                display: { xs: 'block', md: 'flex' }, 
+                gap: { md: 2 },
+                '& > *': {
+                  mb: { xs: 2, md: 0 }
                 }
-              }
-            }}>
-              <Swiper
-                modules={[Navigation]}
-                navigation={{
-                  nextEl: '.products-button-next',
-                  prevEl: '.products-button-prev',
-                }}
-                spaceBetween={24}
-                slidesPerView={1}
-                breakpoints={{
-                  640: { slidesPerView: 2 },
-                  768: { slidesPerView: 2 },
-                  1024: { slidesPerView: 3 },
-                  1280: { slidesPerView: 4 }
-                }}
-              >
-              {latestProducts.slice(0, 8).map((product, index) => (
-                <SwiperSlide key={product.id}>
+              }}
+            >
+              {latestProducts.slice(0, 4).map((product, index) => (
+                <Box key={product.id} sx={{ flex: { md: '1 1 25%' } }}>
                   <Slide direction="up" in timeout={600 + index * 100}>
                     <Card 
                       component={Link}
                       to={`/products/${product.slug}`}
                       sx={{ 
-                        height: '100%', 
+                        height: 420, 
                         display: 'flex', 
                         flexDirection: 'column',
                         borderRadius: 3,
@@ -797,7 +752,7 @@ const Home = () => {
                         <CardMedia
                           component="div"
                           sx={{
-                            height: 280,
+                            height: 220,
                             background: product.cover_photo_url 
                               ? `url(${product.cover_photo_url})`
                               : `linear-gradient(135deg, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.main} 100%)`,
@@ -838,62 +793,50 @@ const Home = () => {
                       </Box>
                       <CardContent sx={{ 
                         flexGrow: 1, 
-                        p: 3, 
+                        p: 2.5, 
                         display: 'flex', 
-                        flexDirection: 'column',
-                        justifyContent: 'space-between'
+                        flexDirection: 'column'
                       }}>
-                        {/* Top Content */}
-                        <Box>
+                        <Typography 
+                          variant="h6" 
+                          component="h3" 
+                          sx={{ 
+                            fontWeight: 700,
+                            mb: 1,
+                            lineHeight: 1.3,
+                            fontSize: '1rem',
+                            color: theme.palette.text.primary
+                          }}
+                        >
+                          {product.main_title}
+                        </Typography>
+                        {product.sub_title && (
                           <Typography 
-                            variant="h6" 
-                            component="h3" 
+                            variant="subtitle2" 
                             sx={{ 
-                              fontWeight: 700,
-                              mb: 1,
-                              lineHeight: 1.3,
-                              fontSize: '1.1rem',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden'
+                              color: theme.palette.primary.main,
+                              fontWeight: 600,
+                              mb: 1.5,
+                              fontSize: '0.8rem'
                             }}
                           >
-                            {product.main_title}
+                            {product.sub_title}
                           </Typography>
-                          {product.sub_title && (
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                color: theme.palette.text.secondary,
-                                mb: 1,
-                                fontSize: '0.875rem',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 1,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
-                              }}
-                            >
-                              {product.sub_title}
-                            </Typography>
-                          )}
-                          {product.artist && (
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                color: theme.palette.primary.main,
-                                fontWeight: 600,
-                                display: 'block',
-                                mb: 2
-                              }}
-                            >
-                              by {product.artist.artist_name}
-                            </Typography>
-                          )}
-                        </Box>
-                        
-                        {/* Bottom Content - Price */}
-                        <Box display="flex" alignItems="center" justifyContent="space-between">
+                        )}
+                        {product.artist && (
+                          <Typography 
+                            variant="caption" 
+                            sx={{ 
+                              color: theme.palette.text.secondary,
+                              display: 'block',
+                              mb: 'auto',
+                              fontSize: '0.8rem'
+                            }}
+                          >
+                            by {product.artist.artist_name}
+                          </Typography>
+                        )}
+                        <Box display="flex" alignItems="center" justifyContent="space-between" mt={2}>
                           <Box>
                             {product.discount_price && parseFloat(product.discount_price) > 0 ? (
                               <Stack direction="row" spacing={1} alignItems="center">
@@ -911,7 +854,8 @@ const Home = () => {
                                   variant="h6" 
                                   sx={{ 
                                     color: theme.palette.error.main,
-                                    fontWeight: 700
+                                    fontWeight: 700,
+                                    fontSize: '1rem'
                                   }}
                                 >
                                   ${parseFloat(product.discount_price).toFixed(2)}
@@ -922,57 +866,24 @@ const Home = () => {
                                 variant="h6" 
                                 sx={{ 
                                   fontWeight: 700,
-                                  color: theme.palette.text.primary
+                                  color: theme.palette.text.primary,
+                                  fontSize: '1rem'
                                 }}
                               >
                                 ${parseFloat(product.price).toFixed(2)}
                               </Typography>
                             )}
                           </Box>
-                          {product.is_custom_dimension && (
-                            <Chip 
-                              label="Custom" 
-                              size="small" 
-                              variant="outlined"
-                              sx={{ fontSize: '0.75rem' }}
-                            />
-                          )}
+                          <IconArrowRight size={14} color={theme.palette.primary.main} />
                         </Box>
                       </CardContent>
                     </Card>
                   </Slide>
-                </SwiperSlide>
+                </Box>
               ))}
-              </Swiper>
             </Box>
             
-            {/* Custom Navigation for Products */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 4 }}>
-              <IconButton
-                className="products-button-prev"
-                sx={{
-                  bgcolor: theme.palette.primary.main,
-                  color: 'white',
-                  '&:hover': { bgcolor: theme.palette.primary.dark },
-                  '&:disabled': { bgcolor: 'grey.300' }
-                }}
-              >
-                <IconChevronLeft />
-              </IconButton>
-              <IconButton
-                className="products-button-next"
-                sx={{
-                  bgcolor: theme.palette.primary.main,
-                  color: 'white',
-                  '&:hover': { bgcolor: theme.palette.primary.dark },
-                  '&:disabled': { bgcolor: 'grey.300' }
-                }}
-              >
-                <IconChevronRight />
-              </IconButton>
-            </Box>
-            
-            <Box textAlign="center" mt={4}>
+            <Box textAlign="center" mt={6}>
               <Button 
                 component={Link}
                 to="/products"
@@ -1126,25 +1037,6 @@ const Home = () => {
                         >
                           <IconPalette size={35} color="white" />
                         </Avatar>
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            bottom: -5,
-                            right: -5,
-                            bgcolor: theme.palette.secondary.main,
-                            color: 'white',
-                            borderRadius: '50%',
-                            width: 28,
-                            height: 28,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                            border: '2px solid white'
-                          }}
-                        >
-                          <IconBookmark size={14} />
-                        </Box>
                       </Box>
                       
                       <Typography 
