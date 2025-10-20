@@ -39,9 +39,17 @@ jobs:
             composer install --optimize-autoloader --no-dev --no-interaction
             
             # Install Node dependencies and build assets
-            echo "🔨 Building frontend assets..."
+            echo "📦 Installing Node dependencies..."
             npm ci
-            npm run build
+            
+            # Clean old build artifacts
+            echo "🧹 Cleaning old build artifacts..."
+            rm -rf public/assets/
+            rm -f public/index.html
+            rm -rf public/.vite/
+            
+            echo "🔨 Building frontend assets..."
+            NODE_OPTIONS="--max-old-space-size=4096" npm run build
             
             # Run database migrations
             echo "🗄️ Running database migrations..."
@@ -53,6 +61,8 @@ jobs:
             php artisan cache:clear
             php artisan route:clear
             php artisan view:clear
+            php artisan event:clear 2>/dev/null || true
+            php artisan optimize:clear 2>/dev/null || true
             
             php artisan config:cache
             php artisan route:cache
