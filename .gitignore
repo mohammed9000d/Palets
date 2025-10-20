@@ -27,6 +27,8 @@ Thumbs.db
 # Build artifacts
 /public/build/
 /public/mix-manifest.json
+/public/assets/
+/public/index.html
 
 # Logs
 *.log

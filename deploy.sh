@@ -39,7 +39,7 @@ composer install --optimize-autoloader --no-dev --no-interaction
 
 # Install/update Node.js dependencies
 echo -e "${YELLOW}📦 Installing Node.js dependencies...${NC}"
-npm install --production
+npm ci
 
 # Build frontend assets
 echo -e "${YELLOW}🔨 Building frontend assets...${NC}"
