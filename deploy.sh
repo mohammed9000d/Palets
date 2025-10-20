@@ -41,9 +41,15 @@ composer install --optimize-autoloader --no-dev --no-interaction
 echo -e "${YELLOW}📦 Installing Node.js dependencies...${NC}"
 npm ci
 
-# Build frontend assets
+# Clean old build artifacts
+echo -e "${YELLOW}🧹 Cleaning old build artifacts...${NC}"
+rm -rf public/assets/
+rm -f public/index.html
+rm -rf public/.vite/
+
+# Build frontend assets with increased memory
 echo -e "${YELLOW}🔨 Building frontend assets...${NC}"
-npm run build
+NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # Run database migrations
 echo -e "${YELLOW}🗄️ Running database migrations...${NC}"
@@ -55,6 +61,8 @@ php artisan config:clear
 php artisan cache:clear
 php artisan route:clear
 php artisan view:clear
+php artisan event:clear 2>/dev/null || true
+php artisan optimize:clear 2>/dev/null || true
 
 # Cache configurations
 echo -e "${YELLOW}💾 Caching configurations...${NC}"
