@@ -40,7 +40,7 @@ jobs:
             
             # Install Node dependencies and build assets
             echo "🔨 Building frontend assets..."
-            npm install --production
+            npm ci
             npm run build
             
             # Run database migrations
