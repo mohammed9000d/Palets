@@ -46,10 +46,15 @@ echo -e "${YELLOW}🧹 Cleaning old build artifacts...${NC}"
 rm -rf public/assets/
 rm -f public/index.html
 rm -rf public/.vite/
+rm -rf public/build/
 
 # Build frontend assets with increased memory
 echo -e "${YELLOW}🔨 Building frontend assets...${NC}"
 NODE_OPTIONS="--max-old-space-size=4096" npm run build
+
+# Add timestamp to manifest for cache busting
+echo -e "${YELLOW}⏰ Adding cache-busting timestamp...${NC}"
+touch public/.vite/manifest.json
 
 # Run database migrations
 echo -e "${YELLOW}🗄️ Running database migrations...${NC}"
@@ -63,6 +68,9 @@ php artisan route:clear
 php artisan view:clear
 php artisan event:clear 2>/dev/null || true
 php artisan optimize:clear 2>/dev/null || true
+
+# Clear response cache if it exists
+php artisan responsecache:clear 2>/dev/null || true
 
 # Cache configurations
 echo -e "${YELLOW}💾 Caching configurations...${NC}"

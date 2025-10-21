@@ -23,6 +23,11 @@
     <meta name="author" content="Palets" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
+    <!-- Cache Control - Prevent caching of HTML page -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
     @vite('resources/css/app.css')
     @vite('resources/js/index.jsx')
   </head>
