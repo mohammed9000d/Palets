@@ -47,9 +47,14 @@ jobs:
             rm -rf public/assets/
             rm -f public/index.html
             rm -rf public/.vite/
+            rm -rf public/build/
             
             echo "🔨 Building frontend assets..."
             NODE_OPTIONS="--max-old-space-size=4096" npm run build
+            
+            # Add timestamp to manifest for cache busting
+            echo "⏰ Adding cache-busting timestamp..."
+            touch public/.vite/manifest.json
             
             # Run database migrations
             echo "🗄️ Running database migrations..."
@@ -63,6 +68,9 @@ jobs:
             php artisan view:clear
             php artisan event:clear 2>/dev/null || true
             php artisan optimize:clear 2>/dev/null || true
+            
+            # Clear response cache if it exists
+            php artisan responsecache:clear 2>/dev/null || true
             
             php artisan config:cache
             php artisan route:cache

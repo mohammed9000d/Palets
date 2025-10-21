@@ -23,3 +23,23 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Cache Control Headers
+<IfModule mod_headers.c>
+    # Prevent caching of HTML and manifest files
+    <FilesMatch "\.(html|htm|json)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+
+    # Cache static assets with versioned filenames for 1 year
+    <FilesMatch "\.(js|css|woff|woff2|ttf|svg|jpg|jpeg|png|gif|ico|webp)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+# Gzip Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>

@@ -25,6 +25,19 @@ export default defineConfig({
     define: {
         global: 'globalThis',
     },
+    build: {
+        // Force new build with different hash on every build
+        manifest: true,
+        // Ensure assets get unique hashes
+        rollupOptions: {
+            output: {
+                // Add timestamp-based hashing for better cache busting
+                entryFileNames: `assets/[name]-[hash].js`,
+                chunkFileNames: `assets/[name]-[hash].js`,
+                assetFileNames: `assets/[name]-[hash].[ext]`
+            }
+        }
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'resources/js'),
