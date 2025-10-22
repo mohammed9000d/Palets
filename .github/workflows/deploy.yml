@@ -33,7 +33,7 @@ jobs:
             
             # Fetch latest changes
             echo "📥 Fetching latest changes..."
-            git fetch --all --tags --prune
+            git fetch --all --tags --prune --force
             
             # Reset to latest to ensure clean state (handles modified files)
             echo "🔄 Resetting to latest remote state..."

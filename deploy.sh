@@ -30,7 +30,7 @@ cd $PROJECT_DIR || { echo -e "${RED}❌ Project directory not found!${NC}"; exit
 
 # Pull latest changes from GitHub
 echo -e "${YELLOW}📥 Pulling latest changes from GitHub...${NC}"
-git fetch --all
+git fetch --all --tags --prune --force
 git reset --hard origin/main || git reset --hard origin/master
 
 # Install/update PHP dependencies
