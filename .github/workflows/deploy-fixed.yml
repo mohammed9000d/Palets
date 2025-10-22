@@ -1,0 +1,168 @@
+name: Deploy to Production Server
+
+on:
+  release:
+    types: [published]
+  # Optional: Allow manual deployment
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          command_timeout: 30m
+          script: |
+            set -e  # Exit on any error
+            
+            echo "🚀 Starting deployment..."
+            echo "Deployment triggered by: ${{ github.event_name }}"
+            echo "Repository: ${{ github.repository }}"
+            echo "Commit SHA: ${{ github.sha }}"
+            echo ""
+            
+            # Navigate to project directory
+            cd /var/www/Palets || { echo "❌ Project directory not found!"; exit 1; }
+            
+            # Show current status
+            echo "📍 Current status before deployment:"
+            echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
+            echo "Current commit: $(git rev-parse --short HEAD)"
+            echo ""
+            
+            # Fetch latest changes
+            echo "📥 Fetching latest changes..."
+            git fetch --all --tags --prune
+            
+            # Check for local changes
+            if ! git diff-index --quiet HEAD --; then
+                echo "⚠️ WARNING: Local changes detected, stashing them..."
+                git stash
+            fi
+            
+            # Reset to latest commit to ensure clean state
+            echo "🔄 Resetting to latest remote state..."
+            git reset --hard origin/main || git reset --hard origin/master
+            
+            # Pull latest changes (should be fast-forward now)
+            echo "📥 Pulling latest changes..."
+            git pull origin main || git pull origin master
+            
+            # Verify we got the latest
+            echo ""
+            echo "📍 Status after pull:"
+            echo "Current commit: $(git rev-parse --short HEAD)"
+            echo "Latest commit message:"
+            git log -1 --pretty=format:"%h - %s (%cr) <%an>"
+            echo ""
+            echo ""
+            
+            # Install PHP dependencies
+            echo "📦 Installing PHP dependencies..."
+            composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
+            
+            # Install Node dependencies
+            echo "📦 Installing Node dependencies..."
+            npm ci --force
+            
+            # Clean old build artifacts THOROUGHLY
+            echo "🧹 Cleaning old build artifacts..."
+            rm -rf public/assets/ || true
+            rm -f public/index.html || true
+            rm -rf public/.vite/ || true
+            rm -rf public/build/ || true
+            rm -rf node_modules/.vite || true
+            
+            # Build frontend assets with increased memory and no cache
+            echo "🔨 Building frontend assets..."
+            NODE_OPTIONS="--max-old-space-size=4096" npm run build -- --force
+            
+            # Verify build was successful
+            if [ ! -d "public/build" ]; then
+                echo "❌ ERROR: Build directory not created!"
+                exit 1
+            fi
+            
+            if [ ! -f "public/build/manifest.json" ]; then
+                echo "❌ ERROR: Manifest file not created!"
+                exit 1
+            fi
+            
+            echo "✅ Build successful!"
+            echo "Build files:"
+            ls -lh public/build/ | head -10
+            echo ""
+            
+            # Run database migrations
+            echo "🗄️ Running database migrations..."
+            php artisan migrate --force
+            
+            # Clear ALL caches aggressively
+            echo "🧹 Clearing all caches..."
+            php artisan config:clear || true
+            php artisan cache:clear || true
+            php artisan route:clear || true
+            php artisan view:clear || true
+            php artisan event:clear 2>/dev/null || true
+            php artisan optimize:clear 2>/dev/null || true
+            php artisan responsecache:clear 2>/dev/null || true
+            
+            # Cache configurations
+            echo "💾 Caching configurations..."
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan optimize
+            
+            # Set proper permissions
+            echo "🔒 Setting permissions..."
+            sudo chown -R www-data:www-data /var/www/Palets || chown -R www-data:www-data /var/www/Palets
+            sudo chmod -R 755 /var/www/Palets || chmod -R 755 /var/www/Palets
+            sudo chmod -R 775 /var/www/Palets/storage || chmod -R 775 /var/www/Palets/storage
+            sudo chmod -R 775 /var/www/Palets/bootstrap/cache || chmod -R 775 /var/www/Palets/bootstrap/cache
+            
+            # Restart services
+            echo "♻️ Restarting services..."
+            sudo systemctl restart php8.2-fpm || systemctl restart php8.2-fpm
+            sudo systemctl restart nginx || systemctl restart nginx
+            
+            # Clear OPcache
+            php artisan opcache:clear 2>/dev/null || echo "ℹ️ OPcache not enabled or command not available"
+            
+            # Add cache-busting timestamp AFTER restart
+            echo "⏰ Updating cache-busting timestamp..."
+            touch public/build/manifest.json
+            
+            echo ""
+            echo "=================================="
+            echo "✅ Deployment completed successfully!"
+            echo "🎉 Application is now running!"
+            echo "=================================="
+            echo ""
+            echo "Final verification:"
+            echo "Current commit: $(git rev-parse --short HEAD)"
+            echo "Build timestamp: $(date)"
+            echo "Manifest modified: $(stat -c %y public/build/manifest.json 2>/dev/null || stat -f %Sm public/build/manifest.json)"
+            echo ""
+
+      - name: Deployment Notification
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment to production was successful!"
+            echo "Deployed commit: ${{ github.sha }}"
+          else
+            echo "❌ Deployment to production failed!"
+            exit 1
+          fi
+
