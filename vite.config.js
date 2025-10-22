@@ -27,7 +27,8 @@ export default defineConfig({
     },
     build: {
         // Force new build with different hash on every build
-        manifest: true,
+        manifest: 'manifest.json',
+        outDir: 'public/build',
         // Ensure assets get unique hashes
         rollupOptions: {
             output: {

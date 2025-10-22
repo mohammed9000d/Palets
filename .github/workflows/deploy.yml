@@ -20,27 +20,35 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
+            set -e
             echo "🚀 Starting deployment..."
             
             # Navigate to project directory
             cd /var/www/Palets || { echo "❌ Project directory not found!"; exit 1; }
             
-            # Store current branch
-            CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            echo "📍 Current branch: $CURRENT_BRANCH"
+            # Show current status
+            echo "📍 Current status:"
+            echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
+            echo "Commit: $(git rev-parse --short HEAD)"
             
-            # Pull latest changes
-            echo "📥 Pulling latest changes..."
-            git fetch --all
-            git pull origin main || git pull origin master
+            # Fetch latest changes
+            echo "📥 Fetching latest changes..."
+            git fetch --all --tags --prune
+            
+            # Reset to latest to ensure clean state (handles modified files)
+            echo "🔄 Resetting to latest remote state..."
+            git reset --hard origin/main || git reset --hard origin/master
+            
+            # Verify update
+            echo "✅ Updated to commit: $(git rev-parse --short HEAD)"
             
             # Install PHP dependencies
             echo "📦 Installing PHP dependencies..."
-            composer install --optimize-autoloader --no-dev --no-interaction
+            composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
             
-            # Install Node dependencies and build assets
+            # Install Node dependencies with legacy peer deps flag
             echo "📦 Installing Node dependencies..."
-            npm ci
+            npm ci --legacy-peer-deps
             
             # Clean old build artifacts
             echo "🧹 Cleaning old build artifacts..."
@@ -48,13 +56,18 @@ jobs:
             rm -f public/index.html
             rm -rf public/.vite/
             rm -rf public/build/
+            rm -rf node_modules/.vite
             
+            # Build frontend assets
             echo "🔨 Building frontend assets..."
             NODE_OPTIONS="--max-old-space-size=4096" npm run build
             
-            # Add timestamp to manifest for cache busting
-            echo "⏰ Adding cache-busting timestamp..."
-            touch public/.vite/manifest.json
+            # Verify build succeeded
+            if [ ! -f "public/build/manifest.json" ]; then
+                echo "❌ ERROR: Build failed - manifest.json not found!"
+                exit 1
+            fi
+            echo "✅ Build successful!"
             
             # Run database migrations
             echo "🗄️ Running database migrations..."
@@ -68,8 +81,6 @@ jobs:
             php artisan view:clear
             php artisan event:clear 2>/dev/null || true
             php artisan optimize:clear 2>/dev/null || true
-            
-            # Clear response cache if it exists
             php artisan responsecache:clear 2>/dev/null || true
             
             php artisan config:cache
@@ -90,10 +101,14 @@ jobs:
             systemctl restart nginx
             
             # Clear any opcache if enabled
-            php artisan opcache:clear 2>/dev/null || echo "ℹ️ OPcache not enabled or command not available"
+            php artisan opcache:clear 2>/dev/null || echo "ℹ️ OPcache not enabled"
             
+            echo ""
+            echo "=================================="
             echo "✅ Deployment completed successfully!"
-            echo "🎉 Application is now running the latest version!"
+            echo "🎉 Application is now running!"
+            echo "=================================="
+            echo "Deployed commit: $(git log -1 --pretty=format:'%h - %s')"
 
       - name: Deployment Notification
         if: always()

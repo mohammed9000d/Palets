@@ -31,7 +31,7 @@ cd $PROJECT_DIR || { echo -e "${RED}❌ Project directory not found!${NC}"; exit
 # Pull latest changes from GitHub
 echo -e "${YELLOW}📥 Pulling latest changes from GitHub...${NC}"
 git fetch --all
-git pull origin main || git pull origin master
+git reset --hard origin/main || git reset --hard origin/master
 
 # Install/update PHP dependencies
 echo -e "${YELLOW}📦 Installing PHP dependencies...${NC}"
@@ -39,7 +39,7 @@ composer install --optimize-autoloader --no-dev --no-interaction
 
 # Install/update Node.js dependencies
 echo -e "${YELLOW}📦 Installing Node.js dependencies...${NC}"
-npm ci
+npm ci --legacy-peer-deps
 
 # Clean old build artifacts
 echo -e "${YELLOW}🧹 Cleaning old build artifacts...${NC}"
@@ -52,9 +52,12 @@ rm -rf public/build/
 echo -e "${YELLOW}🔨 Building frontend assets...${NC}"
 NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
-# Add timestamp to manifest for cache busting
-echo -e "${YELLOW}⏰ Adding cache-busting timestamp...${NC}"
-touch public/.vite/manifest.json
+# Verify build succeeded
+if [ ! -f "public/build/manifest.json" ]; then
+    echo -e "${RED}❌ Build failed - manifest.json not found!${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ Build successful!${NC}"
 
 # Run database migrations
 echo -e "${YELLOW}🗄️ Running database migrations...${NC}"
