@@ -103,11 +103,11 @@ const NewsList = () => {
   };
 
   const handleEdit = (newsItem) => {
-    navigate(`/admin/news/${newsItem.id}/edit`);
+    navigate(`/admin/articles/${newsItem.id}/edit`);
   };
 
   const handleView = (newsItem) => {
-    navigate(`/admin/news/${newsItem.id}`);
+    navigate(`/admin/articles/${newsItem.id}`);
   };
 
   const openDeleteDialog = (newsItem) => {
@@ -139,7 +139,7 @@ const NewsList = () => {
         <Button
           variant="contained"
           startIcon={<IconPlus />}
-          onClick={() => navigate('/admin/news/create')}
+          onClick={() => navigate('/admin/articles/create')}
         >
           Add News
         </Button>

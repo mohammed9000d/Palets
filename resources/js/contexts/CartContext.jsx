@@ -160,7 +160,9 @@ export const CartProvider = ({ children }) => {
         product_title: product.main_title || product.title,
         product_image: product.cover_photo_url || product.cover_image_url,
         options: options, // For custom dimensions, colors, etc.
-        added_at: new Date().toISOString()
+        added_at: new Date().toISOString(),
+        available: true, // Item is available when added to cart
+        artist: product.artist?.artist_name || product.artist_name || null
       };
 
       if (isAuthenticated) {

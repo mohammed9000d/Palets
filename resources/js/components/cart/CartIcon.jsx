@@ -225,12 +225,12 @@ const CartIcon = () => {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                        color: item.available ? 'text.primary' : 'text.disabled'
+                        color: item.available !== false ? 'text.primary' : 'text.disabled'
                       }}
                     >
                       {item.product_title}
                     </Typography>
-                    {!item.available && (
+                    {item.available === false && (
                       <Typography 
                         variant="caption" 
                         color="error.main" 
@@ -255,8 +255,8 @@ const CartIcon = () => {
                         variant="body2" 
                         sx={{ 
                           fontWeight: 600, 
-                          color: item.available ? theme.palette.primary.main : theme.palette.text.disabled,
-                          textDecoration: item.available ? 'none' : 'line-through'
+                          color: item.available !== false ? theme.palette.primary.main : theme.palette.text.disabled,
+                          textDecoration: item.available !== false ? 'none' : 'line-through'
                         }}
                       >
                         {formatPrice((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0))}

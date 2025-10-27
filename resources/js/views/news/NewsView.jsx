@@ -65,7 +65,7 @@ const NewsView = () => {
     if (window.confirm('Are you sure you want to delete this news article?')) {
       try {
         await newsApi.delete(id);
-        navigate('/admin/news');
+        navigate('/admin/articles');
       } catch (error) {
         setError('Error deleting news');
         console.error('Error deleting news:', error);
@@ -110,7 +110,7 @@ const NewsView = () => {
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Button
                 startIcon={<ArrowBackIcon />}
-                onClick={() => navigate('/admin/news')}
+                onClick={() => navigate('/admin/articles')}
                 variant="outlined"
               >
                 Back to News
@@ -118,7 +118,7 @@ const NewsView = () => {
               <Box display="flex" gap={1}>
                 <IconButton
                   component={Link}
-                  to={`/admin/news/${news.id}/edit`}
+                  to={`/admin/articles/${news.id}/edit`}
                   color="primary"
                   size="large"
                 >

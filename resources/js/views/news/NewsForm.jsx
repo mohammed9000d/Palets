@@ -124,7 +124,7 @@ const NewsForm = () => {
 
       // Redirect after success
       setTimeout(() => {
-        navigate('/admin/news');
+        navigate('/admin/articles');
       }, 2000);
     } catch (err) {
       if (err.response?.data?.errors) {
@@ -142,7 +142,7 @@ const NewsForm = () => {
   };
 
   const handleCancel = () => {
-    navigate('/admin/news');
+    navigate('/admin/articles');
   };
 
   return (

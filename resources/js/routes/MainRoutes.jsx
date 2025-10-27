@@ -114,55 +114,55 @@ const MainRoutes = {
       element: <ArtistView />
     },
     {
-      path: 'articles',
+      path: '/admin/articles',
       element: <NewsList />
     },
     {
-      path: 'articles/create',
+      path: '/admin/articles/create',
       element: <NewsForm />
     },
     {
-      path: 'articles/:id',
+      path: '/admin/articles/:id/edit',
+      element: <NewsForm />
+    },
+    {
+      path: '/admin/articles/:id',
       element: <NewsView />
     },
     {
-      path: 'articles/:id/edit',
-      element: <NewsForm />
-    },
-    {
-      path: 'products',
+      path: '/admin/products',
       element: <ProductsList />
     },
     {
-      path: 'products/create',
+      path: '/admin/products/create',
       element: <ProductsForm />
     },
     {
-      path: 'products/edit/:slug',
+      path: '/admin/products/edit/:slug',
       element: <ProductsForm />
     },
     {
-      path: 'galleries',
+      path: '/admin/galleries',
       element: <GalleriesList />
     },
     {
-      path: 'galleries/create',
+      path: '/admin/galleries/create',
       element: <GalleriesForm />
     },
     {
-      path: 'galleries/edit/:slug',
+      path: '/admin/galleries/edit/:slug',
       element: <GalleriesForm />
     },
     {
-      path: 'orders',
+      path: '/admin/orders',
       element: <OrdersList />
     },
     {
-      path: 'orders/:id',
+      path: '/admin/orders/:id',
       element: <OrderView />
     },
     {
-      path: 'settings',
+      path: '/admin/settings',
       element: <Settings />
     }
   ]
