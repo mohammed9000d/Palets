@@ -624,20 +624,8 @@ const Galleries = () => {
                   No Upcoming Exhibitions
                 </Typography>
                 <Typography variant="body1" color="textSecondary" mb={3}>
-                  {searchTerm 
-                    ? 'No exhibitions match your search criteria. Try adjusting your search terms.'
-                    : 'There are currently no upcoming exhibitions scheduled. Check back soon for new announcements!'
-                  }
+                  There are currently no upcoming exhibitions scheduled. Check back soon for new announcements!
                 </Typography>
-                {searchTerm && (
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => setSearchTerm('')}
-                    sx={{ mr: 2 }}
-                  >
-                    Clear Search
-                  </Button>
-                )}
                 <Button 
                   variant="contained" 
                   onClick={() => setActiveTab('archived')}
@@ -688,20 +676,8 @@ const Galleries = () => {
                   No Past Exhibitions
                 </Typography>
                 <Typography variant="body1" color="textSecondary" mb={3}>
-                  {searchTerm 
-                    ? 'No past exhibitions match your search criteria. Try adjusting your search terms.'
-                    : 'There are no past exhibitions to display yet.'
-                  }
+                  There are no past exhibitions to display yet.
                 </Typography>
-                {searchTerm && (
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => setSearchTerm('')}
-                    sx={{ mr: 2 }}
-                  >
-                    Clear Search
-                  </Button>
-                )}
                 <Button 
                   variant="contained" 
                   onClick={() => setActiveTab('upcoming')}
