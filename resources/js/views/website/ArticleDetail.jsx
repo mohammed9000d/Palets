@@ -121,7 +121,7 @@ const ArticleDetail = () => {
   if (!article) {
     return (
       <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-        <IconNews size={64} color={theme.palette.text.secondary} />
+        <IconNews size={64} color={theme.palette.text.secondary} style={{ display: 'block', margin: '0 auto' }} />
         <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
           Article Not Found
         </Typography>

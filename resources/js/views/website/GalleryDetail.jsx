@@ -199,7 +199,7 @@ const GalleryDetail = () => {
   if (error || !gallery) {
     return (
       <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-        <IconPalette size={64} style={{ opacity: 0.3, marginBottom: 16 }} />
+        <IconPalette size={64} style={{ opacity: 0.3, marginBottom: 16, display: 'block', margin: '0 auto 16px' }} />
         <Typography variant="h4" color="textSecondary" gutterBottom>
           Gallery Not Found
         </Typography>

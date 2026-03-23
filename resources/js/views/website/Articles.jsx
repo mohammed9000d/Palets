@@ -461,7 +461,7 @@ const Articles = () => {
           </Box>
         ) : (
           <Box textAlign="center" py={8}>
-            <IconNews size={64} color={theme.palette.text.secondary} />
+            <IconNews size={64} color={theme.palette.text.secondary} style={{ display: 'block', margin: '0 auto' }} />
             <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
               {debouncedSearchTerm ? 'No Articles Found' : 'No Articles Available'}
             </Typography>

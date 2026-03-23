@@ -619,7 +619,7 @@ const Galleries = () => {
                   background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)'
                 }}
               >
-                <IconSparkles size={64} style={{ opacity: 0.3, marginBottom: 16 }} />
+                <IconSparkles size={64} style={{ opacity: 0.3, marginBottom: 16, display: 'block', margin: '0 auto 16px' }} />
                 <Typography variant="h5" color="textSecondary" gutterBottom>
                   No Upcoming Exhibitions
                 </Typography>
@@ -671,7 +671,7 @@ const Galleries = () => {
                   background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)'
                 }}
               >
-                <IconHistory size={64} style={{ opacity: 0.3, marginBottom: 16 }} />
+                <IconHistory size={64} style={{ opacity: 0.3, marginBottom: 16, display: 'block', margin: '0 auto 16px' }} />
                 <Typography variant="h5" color="textSecondary" gutterBottom>
                   No Past Exhibitions
                 </Typography>

@@ -208,7 +208,7 @@ const ArtistProfile = () => {
   if (!artist) {
     return (
       <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-        <IconPalette size={64} color={theme.palette.text.secondary} />
+        <IconPalette size={64} color={theme.palette.text.secondary} style={{ display: 'block', margin: '0 auto' }} />
         <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
           Artist Not Found
         </Typography>
@@ -619,7 +619,7 @@ const ArtistProfile = () => {
                 px: 4, 
                 textAlign: 'center'
               }}>
-                <IconPalette size={64} color={theme.palette.text.disabled} />
+                <IconPalette size={64} color={theme.palette.text.disabled} style={{ display: 'block', margin: '0 auto' }} />
                 <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
                   No Artworks {activeTab === 'for-sale' ? 'For Sale' : 'Available'}
                 </Typography>

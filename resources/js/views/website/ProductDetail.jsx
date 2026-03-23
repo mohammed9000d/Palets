@@ -371,7 +371,7 @@ const ProductDetail = () => {
   if (!product) {
     return (
       <Container maxWidth="xl" sx={{ py: 8, textAlign: 'center' }}>
-        <IconPalette size={64} color={theme.palette.text.secondary} />
+        <IconPalette size={64} color={theme.palette.text.secondary} style={{ display: 'block', margin: '0 auto' }} />
         <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
           Product Not Found
         </Typography>
